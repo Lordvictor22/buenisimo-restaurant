@@ -1,0 +1,450 @@
+/* =========================================================
+   HEADER — BUENÍSIMO RESTAURANT
+========================================================= */
+
+.header {
+  width: 100%;
+  height: 86px;
+
+  background: #ffffff;
+
+  border-bottom: 1px solid #e9e7e3;
+
+  position: relative;
+  z-index: 1000;
+}
+
+.header-container {
+  width: min(1440px, calc(100% - 80px));
+
+  height: 100%;
+
+  margin: 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.header-logo {
+  display: flex;
+  align-items: center;
+
+  flex-shrink: 0;
+
+  text-decoration: none;
+}
+
+.header-logo-wrapper {
+  position: relative;
+
+  width: 145px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.header-logo img {
+  display: block;
+
+  width: 145px;
+  height: auto;
+}
+
+.header-logo-wrapper span {
+  position: absolute;
+
+  bottom: -3px;
+  right: 1px;
+
+  color: #777;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 6px;
+  font-weight: 700;
+
+  letter-spacing: 1.7px;
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+.header-nav {
+  display: flex;
+  align-items: center;
+
+  gap: 38px;
+
+  margin-left: auto;
+  margin-right: 48px;
+}
+
+.header-nav a {
+  position: relative;
+
+  color: #292725;
+
+  text-decoration: none;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 1.8px;
+
+  transition:
+    color 0.25s ease;
+}
+
+.header-nav a::after {
+  content: '';
+
+  position: absolute;
+
+  left: 0;
+  bottom: -9px;
+
+  width: 0;
+  height: 1px;
+
+  background: #d62828;
+
+  transition:
+    width 0.25s ease;
+}
+
+.header-nav a:hover {
+  color: #d62828;
+}
+
+.header-nav a:hover::after {
+  width: 100%;
+}
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 18px;
+}
+
+
+/* =========================================================
+   LANGUAGE SELECTOR
+========================================================= */
+
+.language-selector {
+  position: relative;
+}
+
+.language-button {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  height: 40px;
+
+  padding: 0 7px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #292725;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.4px;
+
+  cursor: pointer;
+
+  transition:
+    color 0.25s ease;
+}
+
+.language-button:hover {
+  color: #d62828;
+}
+
+.language-arrow {
+  transition:
+    transform 0.2s ease;
+}
+
+.language-arrow.open {
+  transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   LANGUAGE DROPDOWN
+========================================================= */
+
+.language-dropdown {
+  position: absolute;
+
+  top: calc(100% + 12px);
+  right: 0;
+
+  width: 195px;
+
+  padding: 8px;
+
+  background: #ffffff;
+
+  border: 1px solid #e8e5e1;
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.12);
+
+  z-index: 2000;
+}
+
+.language-option {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 11px 10px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #333333;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 11px;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.language-option:hover {
+  background: #f7f5f2;
+
+  color: #d62828;
+}
+
+.language-option.active {
+  background: #faf8f5;
+
+  color: #d62828;
+
+  font-weight: 700;
+}
+
+.language-flag {
+  font-size: 16px;
+
+  line-height: 1;
+}
+
+.language-option small {
+  margin-left: auto;
+
+  color: #999999;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   ORDER BUTTON
+========================================================= */
+
+.header-order {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  min-width: 158px;
+
+  height: 48px;
+
+  padding: 0 25px;
+
+  background: #d62828;
+
+  color: #ffffff;
+
+  text-decoration: none;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+
+  letter-spacing: 1.7px;
+
+  border-radius: 1px;
+
+  transition:
+    background 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.header-order:hover {
+  background: #b71c1c;
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 9px 22px rgba(180, 28, 28, 0.20);
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1100px) {
+
+  .header-container {
+    width: calc(100% - 50px);
+  }
+
+  .header-nav {
+    gap: 25px;
+
+    margin-right: 30px;
+  }
+
+  .header-nav a {
+    font-size: 9px;
+
+    letter-spacing: 1.4px;
+  }
+
+  .header-actions {
+    gap: 10px;
+  }
+
+  .header-order {
+    min-width: 140px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 760px) {
+
+  .header {
+    height: 74px;
+  }
+
+  .header-container {
+    width: calc(100% - 36px);
+  }
+
+  .header-logo-wrapper {
+    width: 120px;
+  }
+
+  .header-logo img {
+    width: 120px;
+  }
+
+  .header-logo-wrapper span {
+    font-size: 5px;
+
+    bottom: -2px;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .language-button {
+    height: 38px;
+
+    padding: 0 4px;
+
+    font-size: 9px;
+  }
+
+  .language-dropdown {
+    right: -5px;
+
+    width: 185px;
+  }
+
+  .header-order {
+    min-width: auto;
+
+    height: 43px;
+
+    padding: 0 17px;
+
+    font-size: 9px;
+  }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 400px) {
+
+  .header-container {
+    width: calc(100% - 26px);
+  }
+
+  .header-logo-wrapper,
+  .header-logo img {
+    width: 108px;
+  }
+
+  .header-order {
+    padding: 0 13px;
+  }
+
+  .language-button span {
+    display: none;
+  }
+}

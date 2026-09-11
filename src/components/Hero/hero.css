@@ -1,0 +1,1618 @@
+/* =========================================================
+   HERO — BUENÍSIMO RESTAURANT
+========================================================= */
+
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(14, 11, 9, 0.96) 0%,
+      rgba(14, 11, 9, 0.84) 38%,
+      rgba(14, 11, 9, 0.48) 70%,
+      rgba(14, 11, 9, 0.28) 100%
+    ),
+    url("https://res.cloudinary.com/jh1tbkho/image/upload/v1789134967/teste1.jpg")
+      center center / cover no-repeat;
+
+  color: #ffffff;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.12) 0%,
+      transparent 45%,
+      rgba(0, 0, 0, 0.52) 100%
+    );
+
+  z-index: 1;
+}
+
+.hero-decoration {
+  position: absolute;
+  top: 0;
+  right: 3%;
+  width: 1px;
+  height: 100%;
+
+  background: rgba(255, 255, 255, 0.1);
+
+  z-index: 2;
+}
+
+.hero-container {
+  position: relative;
+  z-index: 3;
+
+  width: min(1380px, calc(100% - 80px));
+  min-height: 100vh;
+
+  margin: 0 auto;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* =========================================================
+   INTEGRATED HEADER
+========================================================= */
+
+.hero-top {
+  width: 100%;
+  min-height: 96px;
+
+  display: flex;
+  align-items: center;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.hero-brand {
+  flex-shrink: 0;
+
+  color: #ffffff;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 27px;
+  font-weight: 700;
+
+  letter-spacing: 2px;
+
+  text-decoration: none;
+  white-space: nowrap;
+
+  transition: color 0.25s ease;
+}
+
+.hero-brand:hover {
+  color: #f5c400;
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+.hero-nav {
+  display: flex;
+  align-items: center;
+
+  gap: 30px;
+
+  margin-left: auto;
+  margin-right: 32px;
+}
+
+.hero-nav a {
+  position: relative;
+
+  color: rgba(255, 255, 255, 0.76);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 1.6px;
+
+  text-decoration: none;
+  white-space: nowrap;
+
+  transition: color 0.25s ease;
+}
+
+.hero-nav a::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: -9px;
+
+  width: 0;
+  height: 1px;
+
+  background: #f5c400;
+
+  transition: width 0.25s ease;
+}
+
+.hero-nav a:hover {
+  color: #ffffff;
+}
+
+.hero-nav a:hover::after {
+  width: 100%;
+}
+
+
+/* =========================================================
+   HEADER ACTIONS
+========================================================= */
+
+.hero-header-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  flex-shrink: 0;
+}
+
+
+/* =========================================================
+   LANGUAGE SELECTOR
+========================================================= */
+
+.hero-language-selector {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.hero-language-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  height: 42px;
+
+  padding: 0 5px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: rgba(255, 255, 255, 0.82);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 1.3px;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: color 0.25s ease;
+}
+
+.hero-language-button:hover {
+  color: #f5c400;
+}
+
+.hero-language-arrow {
+  transition: transform 0.2s ease;
+}
+
+.hero-language-arrow.open {
+  transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   LANGUAGE DROPDOWN
+========================================================= */
+
+.hero-language-dropdown {
+  position: absolute;
+
+  top: calc(100% + 10px);
+  right: 0;
+
+  width: 190px;
+
+  padding: 8px;
+
+  background: #ffffff;
+
+  border: 1px solid #e7e3de;
+
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+
+  z-index: 3000;
+}
+
+.hero-language-option {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 10px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #333333;
+
+  font-size: 11px;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.hero-language-option:hover {
+  background: #f7f5f2;
+
+  color: #d62828;
+}
+
+.hero-language-option.active {
+  background: #faf8f5;
+
+  color: #d62828;
+
+  font-weight: 700;
+}
+
+.hero-language-flag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.hero-language-option small {
+  margin-left: auto;
+
+  color: #999999;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   HEADER ORDER BUTTON
+========================================================= */
+
+.hero-header-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 120px;
+  height: 46px;
+
+  padding: 0 20px;
+
+  background: #d62828;
+  color: #ffffff;
+
+  text-decoration: none;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1.7px;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.hero-header-order:hover {
+  background: #b71c1c;
+
+  transform: translateY(-2px);
+
+  box-shadow: 0 10px 25px rgba(214, 40, 40, 0.3);
+}
+
+
+/* =========================================================
+   MAIN HERO
+========================================================= */
+
+.hero-body {
+  flex: 1;
+
+  min-width: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 0.95fr)
+    minmax(420px, 0.70fr);
+
+  align-items: center;
+
+  gap: 50px;
+
+  padding: 42px 28px 34px 0;
+}
+
+
+/* =========================================================
+   HERO COPY
+========================================================= */
+
+.hero-copy {
+  min-width: 0;
+
+  max-width: 620px;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  margin-bottom: 20px;
+
+  color: #f5c400;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 3px;
+}
+
+.hero-eyebrow::before {
+  content: "";
+
+  width: 30px;
+  height: 1px;
+
+  background: #d62828;
+}
+
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+.hero h1 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: clamp(52px, 5.1vw, 76px);
+
+  font-weight: 700;
+
+  line-height: 0.94;
+
+  letter-spacing: -3px;
+}
+
+.hero h1 span {
+  color: #f5c400;
+}
+
+.hero h1 em {
+  display: block;
+
+  margin-top: 5px;
+
+  color: rgba(255, 255, 255, 0.92);
+
+  font-size: 0.57em;
+
+  font-style: normal;
+
+  line-height: 1.05;
+
+  letter-spacing: -1px;
+}
+
+.hero-description {
+  max-width: 420px;
+
+  margin: 25px 0 30px;
+
+  color: rgba(255, 255, 255, 0.7);
+
+  font-size: 14px;
+
+  line-height: 1.7;
+}
+
+
+/* =========================================================
+   HERO BUTTONS
+========================================================= */
+
+.hero-buttons {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+}
+
+.hero-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 18px;
+
+  min-width: 190px;
+  height: 58px;
+
+  padding: 0 28px;
+
+  text-decoration: none;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1.6px;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.hero-button-primary {
+  background: #d62828;
+
+  color: #ffffff;
+
+  box-shadow:
+    0 12px 30px rgba(214, 40, 40, 0.22);
+}
+
+.hero-button-primary span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.hero-button-primary:hover {
+  background: #b71c1c;
+
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 18px 38px rgba(214, 40, 40, 0.34);
+}
+
+.hero-button-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.42);
+
+  color: #ffffff;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  backdrop-filter: blur(5px);
+}
+
+.hero-button-secondary:hover {
+  background: #ffffff;
+
+  border-color: #ffffff;
+
+  color: #181512;
+
+  transform: translateY(-3px);
+}
+
+
+/* =========================================================
+   FOOD VISUAL
+========================================================= */
+
+.hero-visual {
+  position: relative;
+
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* =========================================================
+   FOOD IMAGE FRAME
+========================================================= */
+
+.hero-image-frame {
+  position: relative;
+
+  width: min(100%, 590px);
+
+  /*
+    A referência tem uma foto horizontal,
+    não uma foto quase quadrada.
+  */
+  aspect-ratio: 1.17;
+
+  padding: 0;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(255, 255, 255, 0.30);
+
+  background: #0b0907;
+
+  isolation: isolate;
+}
+
+
+/* =========================================================
+   FOOD CAROUSEL
+========================================================= */
+
+.hero-food-slider {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+
+  overflow: visible;
+
+  /*
+    Evita artefatos de subpixel nas transições.
+  */
+  transform: translate3d(0, 0, 0);
+
+  transition:
+    transform 0.65s cubic-bezier(0.77, 0, 0.175, 1);
+
+  will-change: transform;
+}
+
+.hero-food-slide {
+  position: relative;
+
+  flex: 0 0 100%;
+
+  width: 100%;
+  min-width: 100%;
+
+  height: 100%;
+
+  overflow: hidden;
+
+  transform: translate3d(0, 0, 0);
+
+  backface-visibility: hidden;
+}
+
+.hero-food-slide-image {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+
+  transform: scale(1.025);
+
+  backface-visibility: hidden;
+}
+
+
+/* =========================================================
+   EMPTY PHOTO
+========================================================= */
+
+.hero-food-empty {
+  position: absolute;
+
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25, 20, 16, 0.96),
+      rgba(10, 8, 6, 0.96)
+    );
+
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hero-food-empty span {
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 3px;
+}
+
+.hero-food-empty small {
+  margin-top: 8px;
+
+  font-size: 9px;
+
+  letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   CAROUSEL ARROWS
+========================================================= */
+
+.hero-food-arrow {
+  position: absolute;
+
+  top: 50%;
+
+  z-index: 30;
+
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid rgba(255, 255, 255, 0.38);
+
+  background: rgba(0, 0, 0, 0.30);
+
+  backdrop-filter: blur(8px);
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  transform: translateY(-50%);
+
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.hero-food-arrow svg {
+  width: 19px;
+  height: 19px;
+}
+
+.hero-food-arrow:hover {
+  background: #d62828;
+
+  border-color: #d62828;
+
+  transform:
+    translateY(-50%)
+    scale(1.07);
+}
+
+.hero-food-arrow-left {
+  left: 16px;
+}
+
+.hero-food-arrow-right {
+  right: 16px;
+}
+
+
+/* =========================================================
+   IMAGE ACCENT
+========================================================= */
+
+.hero-image-accent {
+  position: absolute;
+
+  right: -1px;
+  bottom: -1px;
+
+  width: 66px;
+  height: 66px;
+
+  border-right: 2px solid #f5c400;
+  border-bottom: 2px solid #f5c400;
+
+  z-index: 40;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   FOOD INFORMATION
+========================================================= */
+
+.hero-food-info {
+  width: min(100%, 590px);
+
+  margin-top: 12px;
+}
+
+.hero-food-text {
+  width: 100%;
+  min-width: 0;
+}
+
+.hero-food-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hero-food-text-animated {
+  animation:
+    heroFoodTextIn
+    0.55s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+@keyframes heroFoodTextIn {
+  0% {
+    opacity: 0;
+
+    transform:
+      translateX(22px)
+      translateY(5px);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform:
+      translateX(0)
+      translateY(0);
+  }
+}
+
+.hero-food-kicker {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #f5c400;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 2px;
+}
+
+.hero-food-text h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: 27px;
+
+  font-weight: 700;
+
+  line-height: 1.05;
+}
+
+.hero-food-text p {
+  margin: 5px 0 0;
+
+  color: rgba(255, 255, 255, 0.55);
+
+  font-size: 10px;
+
+  line-height: 1.5;
+}
+
+.hero-food-price {
+  flex-shrink: 0;
+
+  margin: 0;
+
+  color: #f5c400;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.hero-food-price-animated {
+  animation:
+    heroFoodPriceIn
+    0.5s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+@keyframes heroFoodPriceIn {
+  0% {
+    opacity: 0;
+
+    transform: translateX(15px);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform: translateX(0);
+  }
+}
+
+
+/* =========================================================
+   VISUAL LABEL
+========================================================= */
+
+.hero-visual-label {
+  width: min(100%, 590px);
+
+  display: grid;
+
+  grid-template-columns:
+    auto
+    1fr
+    auto;
+
+  align-items: center;
+
+  gap: 18px;
+
+  margin-top: 11px;
+
+  color: rgba(255, 255, 255, 0.45);
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 1.7px;
+}
+
+
+/* =========================================================
+   COUNTER
+========================================================= */
+
+.hero-food-counter {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: rgba(255, 255, 255, 0.42);
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+}
+
+.hero-food-counter > span:first-child {
+  color: #f5c400;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: 14px;
+}
+
+.hero-food-counter-line {
+  width: 25px;
+  height: 1px;
+
+  background: rgba(255, 255, 255, 0.25);
+}
+
+
+/* =========================================================
+   CAROUSEL DOTS
+========================================================= */
+
+.hero-food-dots {
+  display: flex;
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 5px;
+}
+
+.hero-food-dot {
+  width: 5px;
+  height: 5px;
+
+  padding: 0;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.3);
+
+  cursor: pointer;
+
+  transition:
+    width 0.3s ease,
+    background 0.3s ease,
+    transform 0.3s ease;
+}
+
+.hero-food-dot:hover {
+  transform: scale(1.2);
+}
+
+.hero-food-dot.active {
+  width: 18px;
+
+  border-radius: 10px;
+
+  background: #f5c400;
+}
+
+
+/* =========================================================
+   INFORMATION FOOTER
+========================================================= */
+
+.hero-bottom {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.2fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  min-height: 118px;
+
+  padding: 14px 0;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.hero-bottom-label {
+  display: block;
+
+  margin-bottom: 9px;
+
+  color: #f5c400;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 2px;
+}
+
+
+/* =========================================================
+   ADDRESS
+========================================================= */
+
+.hero-location {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  padding-right: 25px;
+
+  text-decoration: none;
+
+  transition: opacity 0.25s ease;
+}
+
+.hero-location:hover {
+  opacity: 0.72;
+}
+
+.hero-location-address {
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  line-height: 1.4;
+}
+
+.hero-location-city {
+  margin-top: 4px;
+
+  color: rgba(255, 255, 255, 0.55);
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   SOCIAL
+========================================================= */
+
+.hero-social {
+  min-width: 0;
+
+  padding-left: 30px;
+
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.hero-social-links {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+}
+
+.hero-social-links a {
+  width: 38px;
+  height: 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+
+  color: rgba(255, 255, 255, 0.82);
+
+  background: rgba(255, 255, 255, 0.04);
+
+  text-decoration: none;
+
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.hero-social-links a svg {
+  width: 17px;
+  height: 17px;
+}
+
+.hero-social-links a:hover {
+  color: #ffffff;
+
+  background: #d62828;
+
+  border-color: #d62828;
+
+  transform: translateY(-3px);
+}
+
+
+/* =========================================================
+   CONTACT
+========================================================= */
+
+.hero-phone {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  padding-left: 30px;
+
+  text-decoration: none;
+
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+
+  transition: opacity 0.25s ease;
+}
+
+.hero-phone:hover {
+  opacity: 0.72;
+}
+
+.hero-phone-number {
+  color: #ffffff;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.2px;
+}
+
+
+/* =========================================================
+   LARGE TABLET / SMALL DESKTOP
+========================================================= */
+
+@media (max-width: 1180px) {
+
+  .hero-container {
+    width: calc(100% - 60px);
+  }
+
+  .hero-nav {
+    gap: 22px;
+
+    margin-right: 24px;
+  }
+
+  .hero-nav a {
+    font-size: 8px;
+
+    letter-spacing: 1.3px;
+  }
+
+  .hero-header-actions {
+    gap: 9px;
+  }
+
+  .hero-header-order {
+    min-width: 105px;
+
+    padding: 0 16px;
+  }
+
+  .hero-body {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(360px, 0.75fr);
+
+    gap: 40px;
+  }
+
+  .hero h1 {
+    font-size: clamp(48px, 5.5vw, 68px);
+  }
+
+  .hero-image-frame {
+    max-width: 500px;
+  }
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+  .hero {
+    min-height: auto;
+  }
+
+  .hero-container {
+    width: calc(100% - 50px);
+
+    min-height: auto;
+  }
+
+  .hero-top {
+    min-height: 85px;
+  }
+
+  .hero-brand {
+    font-size: 23px;
+  }
+
+  .hero-nav {
+    gap: 16px;
+
+    margin-right: 15px;
+  }
+
+  .hero-nav a {
+    font-size: 7px;
+
+    letter-spacing: 1px;
+  }
+
+  .hero-header-order {
+    min-width: 90px;
+
+    height: 42px;
+
+    padding: 0 13px;
+  }
+
+  .hero-body {
+    grid-template-columns: 1fr;
+
+    gap: 50px;
+
+    padding: 60px 0 55px;
+  }
+
+  .hero-copy {
+    max-width: 700px;
+  }
+
+  .hero-visual {
+    width: 100%;
+
+    max-width: 590px;
+
+    justify-self: center;
+  }
+
+  .hero-bottom {
+    grid-template-columns: 1fr 1fr;
+
+    row-gap: 25px;
+
+    padding: 30px 0;
+  }
+
+  .hero-phone {
+    align-items: flex-start;
+
+    padding-left: 0;
+
+    border-left: none;
+  }
+
+  .hero-social {
+    padding-left: 25px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  .hero-container {
+    width: calc(100% - 36px);
+  }
+
+  .hero-top {
+    min-height: 76px;
+  }
+
+  .hero-brand {
+    font-size: 21px;
+  }
+
+  .hero-nav {
+    display: none;
+  }
+
+  .hero-header-actions {
+    margin-left: auto;
+
+    gap: 8px;
+  }
+
+  .hero-language-button {
+    padding: 0 3px;
+  }
+
+  .hero-header-order {
+    min-width: 100px;
+
+    height: 42px;
+
+    padding: 0 14px;
+  }
+
+  .hero-body {
+    gap: 42px;
+
+    padding: 55px 0 50px;
+  }
+
+  .hero-eyebrow {
+    font-size: 8px;
+
+    letter-spacing: 2.2px;
+  }
+
+  .hero h1 {
+    font-size: clamp(45px, 12vw, 62px);
+
+    line-height: 0.95;
+
+    letter-spacing: -2px;
+  }
+
+  .hero h1 em {
+    font-size: 0.63em;
+
+    letter-spacing: -0.5px;
+  }
+
+  .hero-description {
+    max-width: 390px;
+
+    margin: 22px 0 28px;
+
+    font-size: 14px;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 10px;
+  }
+
+  .hero-button {
+    width: 100%;
+
+    min-width: 0;
+
+    height: 56px;
+  }
+
+  .hero-image-frame {
+    width: 100%;
+
+    max-width: 590px;
+
+    aspect-ratio: 1.08;
+  }
+
+  .hero-image-accent {
+    right: -1px;
+    bottom: -1px;
+
+    width: 50px;
+    height: 50px;
+  }
+
+  .hero-food-arrow {
+    width: 38px;
+    height: 38px;
+  }
+
+  .hero-food-arrow-left {
+    left: 13px;
+  }
+
+  .hero-food-arrow-right {
+    right: 13px;
+  }
+
+  .hero-food-info {
+    width: 100%;
+
+    align-items: flex-start;
+
+    gap: 15px;
+  }
+
+  .hero-food-text h2 {
+    font-size: 22px;
+  }
+
+  .hero-food-price {
+    font-size: 14px;
+  }
+
+  .hero-visual-label {
+    width: 100%;
+
+    grid-template-columns:
+      auto
+      1fr
+      auto;
+
+    gap: 10px;
+
+    font-size: 7px;
+  }
+
+  .hero-food-dots {
+    gap: 4px;
+  }
+
+  .hero-bottom {
+    grid-template-columns: 1fr;
+
+    gap: 25px;
+
+    padding: 30px 0 38px;
+  }
+
+  .hero-social {
+    padding-left: 0;
+
+    border-left: none;
+  }
+
+  .hero-phone {
+    align-items: flex-start;
+  }
+
+  .hero-decoration {
+    display: none;
+  }
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 400px) {
+
+  .hero-container {
+    width: calc(100% - 28px);
+  }
+
+  .hero-brand {
+    font-size: 19px;
+  }
+
+  .hero-language-button span {
+    display: none;
+  }
+
+  .hero-header-order {
+    min-width: 92px;
+
+    padding: 0 11px;
+  }
+
+  .hero h1 {
+    font-size: 42px;
+  }
+
+  .hero-image-frame {
+    width: 100%;
+
+    aspect-ratio: 1;
+  }
+
+  .hero-food-info {
+    width: 100%;
+  }
+
+  .hero-visual-label {
+    width: 100%;
+
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .hero-food-text h2 {
+    font-size: 20px;
+  }
+
+  .hero-food-text p {
+    font-size: 9px;
+  }
+
+  .hero-food-arrow {
+    width: 34px;
+    height: 34px;
+  }
+
+  .hero-social-links {
+    gap: 16px;
+  }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .hero-food-slider,
+  .hero-food-text-animated,
+  .hero-food-price-animated,
+  .hero-food-arrow,
+  .hero-social-links a,
+  .hero-button,
+  .hero-header-order {
+    animation: none;
+
+    transition: none;
+  }
+}
+
+
+/* =========================================================
+   LOGO IMAGE
+========================================================= */
+
+.hero-brand {
+  display: flex;
+
+  align-items: center;
+
+  flex-shrink: 0;
+}
+
+.hero-brand img {
+  display: block;
+
+  width: 150px;
+
+  height: auto;
+
+  object-fit: contain;
+
+  transition:
+    transform 0.25s ease,
+    filter 0.25s ease;
+}
+
+.hero-brand:hover img {
+  transform: scale(1.03);
+
+  filter: brightness(1.12);
+}
