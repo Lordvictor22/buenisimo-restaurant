@@ -1,4 +1,5 @@
 import { useContext, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import {
   FiGlobe,
@@ -117,16 +118,16 @@ function Hero() {
 
         <header className="hero-top">
 
-          <a href="/" className="hero-brand">
+          <Link to="/" className="hero-brand">
             <img
               src={logoBuenisimo}
               alt="Buenísimo Restaurant"
             />
-          </a>
+          </Link> 
 
           <nav className="hero-nav">
             <a href="/">{t.nav.home}</a>
-            <a href="/menu">{t.nav.menu}</a>
+            <Link to="/menu">{t.nav.menu}</Link>
             <a href="#about">{t.nav.about}</a>
             <a href="#gallery">{t.nav.gallery}</a>
           </nav>
@@ -185,12 +186,12 @@ function Hero() {
 
             </div>
 
-            <a
-              href="/menu"
+            <Link
+              to="/menu"
               className="hero-header-order"
             >
               {t.nav.order}
-            </a>
+            </Link>
 
           </div>
 
@@ -223,20 +224,20 @@ function Hero() {
 
             <div className="hero-buttons">
 
-              <a
-                href="/menu"
+              <Link
+                to="/menu"
                 className="hero-button hero-button-primary"
               >
                 {t.hero.orderOnline}
                 <span>→</span>
-              </a>
+              </Link>
 
-              <a
-                href="/menu"
+              <Link
+                to="/menu"
                 className="hero-button hero-button-secondary"
               >
                 {t.hero.viewMenu}
-              </a>
+              </Link>
 
             </div>
 
