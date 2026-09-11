@@ -14,7 +14,10 @@ import {
 } from 'react-icons/fa';
 
 import { LanguageContext } from '../../context/LanguageContext';
+import logoBuenisimo from '../../assets/images/LogoBuenisimo123.png';
 import "./hero.css";
+
+
 
 function Hero() {
   const { language, setLanguage, t } = useContext(LanguageContext);
@@ -116,7 +119,7 @@ function Hero() {
 
           <a href="/" className="hero-brand">
             <img
-              src="/src/assets/images/LogoBuenisimo123.png"
+              src={logoBuenisimo}
               alt="Buenísimo Restaurant"
             />
           </a>
