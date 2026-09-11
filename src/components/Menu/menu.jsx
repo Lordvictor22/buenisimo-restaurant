@@ -5,9 +5,11 @@ import {
 } from 'react-icons/fi';
 import { LanguageContext } from '../../context/LanguageContext';
 import Cart from '../Cart/Cart';
-import "./menu.css";
+import './menu.css';
+import logoBuenisimo from '../../assets/images/LogoBuenisimo123.png';
 
-const API_URL = 'http://localhost:4242/api';
+const API_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:4242/api';
 
 function Menu() {
   const { language, setLanguage, t } = useContext(LanguageContext);
@@ -114,7 +116,8 @@ function Menu() {
         );
 
         setError(
-          t.menu.errorLoadMenu || 'Unable to load the menu. Please try again.'
+          t.menu.errorLoadMenu ||
+            'Unable to load the menu. Please try again.'
         );
       } finally {
         setIsLoading(false);
@@ -250,10 +253,6 @@ function Menu() {
       ];
     });
 
-    /*
-     * Abre o carrinho depois de atualizar
-     * o estado.
-     */
     setCartOpen(true);
   };
 
@@ -285,19 +284,11 @@ function Menu() {
         ? data
         : [];
 
-      /*
-       * Produto sem opções:
-       * adiciona diretamente ao carrinho.
-       */
       if (options.length === 0) {
         addSimpleToCart(dish);
         return;
       }
 
-      /*
-       * Produto possui opções:
-       * abre o modal.
-       */
       const initialSelections = {};
 
       options.forEach((group) => {
@@ -319,7 +310,8 @@ function Menu() {
       );
 
       setOptionsError(
-        t.menu.optionsError || 'Unable to load the options for this product.'
+        t.menu.optionsError ||
+          'Unable to load the options for this product.'
       );
     } finally {
       setOptionsLoading(false);
@@ -343,9 +335,6 @@ function Menu() {
       const currentValue =
         current[groupId];
 
-      /*
-       * Grupo permite várias opções.
-       */
       if (
         Number(group.max_selections) > 1
       ) {
@@ -387,9 +376,6 @@ function Menu() {
         };
       }
 
-      /*
-       * Grupo permite apenas uma opção.
-       */
       return {
         ...current,
         [groupId]: optionId,
@@ -455,7 +441,8 @@ function Menu() {
 
     if (!validateOptions()) {
       setOptionsError(
-        t.menu.pleaseSelectOptions || 'Please select all required options.'
+        t.menu.pleaseSelectOptions ||
+          'Please select all required options.'
       );
       return;
     }
@@ -499,10 +486,6 @@ function Menu() {
       });
     });
 
-    /*
-     * Calcular preço final.
-     */
-
     const optionTotal =
       selectedOptionObjects.reduce(
         (total, option) =>
@@ -519,12 +502,6 @@ function Menu() {
 
     const finalPrice =
       basePrice + optionTotal;
-
-    /*
-     * Criar identificador único:
-     *
-     * produto + opções.
-     */
 
     const optionKey =
       selectedOptionObjects
@@ -576,16 +553,7 @@ function Menu() {
       ];
     });
 
-    /*
-     * Fecha modal.
-     */
-
     closeOptionsModal();
-
-    /*
-     * Abre carrinho.
-     */
-
     setCartOpen(true);
   };
 
@@ -673,9 +641,12 @@ function Menu() {
 
           <header className="menu-top">
 
-            <a href="/" className="menu-brand">
+            <a
+              href="/"
+              className="menu-brand"
+            >
               <img
-                src="/src/assets/images/LogoBuenisimo123.png"
+                src={logoBuenisimo}
                 alt="Buenísimo Restaurant"
               />
             </a>
@@ -688,17 +659,27 @@ function Menu() {
             </nav>
 
             <div className="menu-header-actions">
+
               <div className="menu-language-selector">
+
                 <button
                   type="button"
                   className="menu-language-button"
-                  onClick={() => setLanguageOpen(!languageOpen)}
+                  onClick={() =>
+                    setLanguageOpen(
+                      !languageOpen
+                    )
+                  }
                   aria-label="Select language"
-                  aria-expanded={languageOpen}
+                  aria-expanded={
+                    languageOpen
+                  }
                 >
                   <FiGlobe size={15} />
 
-                  <span>{language}</span>
+                  <span>
+                    {language}
+                  </span>
 
                   <FiChevronDown
                     size={13}
@@ -712,40 +693,54 @@ function Menu() {
 
                 {languageOpen && (
                   <div className="menu-language-dropdown">
-                    {languages.map((item) => (
-                      <button
-                        type="button"
-                        key={item.code}
-                        className={
-                          language === item.code
-                            ? 'menu-language-option active'
-                            : 'menu-language-option'
-                        }
-                        onClick={() => handleLanguageChange(item)}
-                      >
-                        <span className="menu-language-flag">
-                          {item.flag}
-                        </span>
 
-                        <span>{item.name}</span>
+                    {languages.map(
+                      (item) => (
+                        <button
+                          type="button"
+                          key={item.code}
+                          className={
+                            language ===
+                            item.code
+                              ? 'menu-language-option active'
+                              : 'menu-language-option'
+                          }
+                          onClick={() =>
+                            handleLanguageChange(
+                              item
+                            )
+                          }
+                        >
+                          <span className="menu-language-flag">
+                            {item.flag}
+                          </span>
 
-                        <small>{item.code}</small>
-                      </button>
-                    ))}
+                          <span>
+                            {item.name}
+                          </span>
+
+                          <small>
+                            {item.code}
+                          </small>
+                        </button>
+                      )
+                    )}
+
                   </div>
                 )}
+
               </div>
 
-              <a href="/menu" className="menu-header-order">
+              <a
+                href="/menu"
+                className="menu-header-order"
+              >
                 {t.nav.order}
               </a>
+
             </div>
 
           </header>
-
-          {/* ============================================================
-              HEADER
-              ============================================================ */}
 
           <div className="menu-header">
 
@@ -766,10 +761,6 @@ function Menu() {
             </p>
 
           </div>
-
-          {/* ============================================================
-              CATEGORIAS
-              ============================================================ */}
 
           <div className="menu-categories">
 
@@ -797,29 +788,18 @@ function Menu() {
 
           </div>
 
-          {/* ============================================================
-              LOADING
-              ============================================================ */}
-
           {isLoading && (
             <div className="menu-status">
-              {t.menu.loadingMenu || 'Loading menu...'}
+              {t.menu.loadingMenu ||
+                'Loading menu...'}
             </div>
           )}
-
-          {/* ============================================================
-              ERROR
-              ============================================================ */}
 
           {error && (
             <div className="menu-status menu-status-error">
               {error}
             </div>
           )}
-
-          {/* ============================================================
-              EMPTY CATEGORY
-              ============================================================ */}
 
           {!isLoading &&
             !error &&
@@ -829,10 +809,6 @@ function Menu() {
                   'No products available in this category.'}
               </div>
             )}
-
-          {/* ============================================================
-              PRODUCTS
-              ============================================================ */}
 
           {!isLoading &&
             !error &&
@@ -845,8 +821,6 @@ function Menu() {
                       className="menu-card"
                       key={dish.id}
                     >
-
-                      {/* IMAGE */}
 
                       <div className="menu-card-image">
 
@@ -868,8 +842,6 @@ function Menu() {
                         )}
 
                       </div>
-
-                      {/* CONTENT */}
 
                       <div className="menu-card-content">
 
@@ -909,8 +881,10 @@ function Menu() {
                           }
                         >
                           {optionsLoading
-                            ? t.menu.loading || 'Loading...'
-                            : t.menu.addToOrder || 'Add to order'}
+                            ? t.menu.loading ||
+                              'Loading...'
+                            : t.menu.addToOrder ||
+                              'Add to order'}
                         </button>
 
                       </div>
@@ -924,10 +898,6 @@ function Menu() {
 
         </div>
       </section>
-
-      {/* ================================================================
-          PRODUCT OPTIONS MODAL
-          ================================================================ */}
 
       {selectedDish && (
         <div
@@ -944,20 +914,18 @@ function Menu() {
 
           <div className="product-options-modal">
 
-            {/* CLOSE */}
-
             <button
               type="button"
               className="product-options-close"
               onClick={
                 closeOptionsModal
               }
-              aria-label={t.menu.close || 'Close'}
+              aria-label={
+                t.menu.close || 'Close'
+              }
             >
               ×
             </button>
-
-            {/* HEADER */}
 
             <div className="product-options-header">
 
@@ -966,12 +934,11 @@ function Menu() {
               </h2>
 
               <p>
-                {t.menu.chooseOptions || 'Choose your options'}
+                {t.menu.chooseOptions ||
+                  'Choose your options'}
               </p>
 
             </div>
-
-            {/* OPTIONS */}
 
             <div className="product-options-body">
 
@@ -990,8 +957,6 @@ function Menu() {
                       className="product-option-group"
                       key={groupId}
                     >
-
-                      {/* GROUP HEADER */}
 
                       <div className="product-option-group-header">
 
@@ -1013,13 +978,12 @@ function Menu() {
 
                         {group.required && (
                           <span className="product-option-required">
-                            {t.menu.required || 'Required'}
+                            {t.menu.required ||
+                              'Required'}
                           </span>
                         )}
 
                       </div>
-
-                      {/* OPTIONS */}
 
                       <div className="product-option-list">
 
@@ -1114,8 +1078,6 @@ function Menu() {
                 }
               )}
 
-              {/* ERROR */}
-
               {optionsError && (
                 <div className="product-options-error">
                   {optionsError}
@@ -1123,8 +1085,6 @@ function Menu() {
               )}
 
             </div>
-
-            {/* FOOTER */}
 
             <div className="product-options-footer">
 
@@ -1212,7 +1172,8 @@ function Menu() {
                   addConfiguredToCart
                 }
               >
-                {t.menu.addToOrder || 'Add to order'}
+                {t.menu.addToOrder ||
+                  'Add to order'}
               </button>
 
             </div>
@@ -1221,10 +1182,6 @@ function Menu() {
 
         </div>
       )}
-
-      {/* ================================================================
-          CART
-          ================================================================ */}
 
       <Cart
         isOpen={cartOpen}
