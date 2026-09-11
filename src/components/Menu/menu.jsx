@@ -5,7 +5,7 @@ import {
 } from 'react-icons/fi';
 import { LanguageContext } from '../../context/LanguageContext';
 import Cart from '../Cart/Cart';
-import './Menu.css';
+import "./menu.css";
 
 const API_URL = 'http://localhost:4242/api';
 

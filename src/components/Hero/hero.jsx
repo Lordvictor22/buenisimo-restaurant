@@ -14,7 +14,7 @@ import {
 } from 'react-icons/fa';
 
 import { LanguageContext } from '../../context/LanguageContext';
-import './Hero.css';
+import "./hero.css";
 
 function Hero() {
   const { language, setLanguage, t } = useContext(LanguageContext);
