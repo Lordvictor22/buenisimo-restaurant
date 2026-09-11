@@ -19,7 +19,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173',
+      'https://buenisimorestaurant.netlify.app',
+    ],
   })
 );
 
@@ -470,39 +473,49 @@ app.get(
 
 /*
 |--------------------------------------------------------------------------
+| Admin - listar todos os produtos
+|--------------------------------------------------------------------------
+*/
+
+app.get('/api/admin/products', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        id,
+        name,
+        description,
+        category,
+        price,
+        image_url,
+        available,
+        created_at,
+        updated_at
+      FROM products
+      ORDER BY id ASC
+    `);
+
+    res.json({
+      success: true,
+      products: result.rows,
+    });
+  } catch (error) {
+    console.error(
+      '❌ Error loading admin products:',
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: 'Unable to load products.',
+    });
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
 | Criar produto
 |--------------------------------------------------------------------------
 */
-  app.get('/api/admin/products', async (req, res) => {
-    try {
-      const result = await pool.query(`
-        SELECT
-          id,
-          name,
-          description,
-          category,
-          price,
-          image_url,
-          available,
-          created_at,
-          updated_at
-        FROM products
-        ORDER BY id ASC
-      `);
-
-      res.json({
-        success: true,
-        products: result.rows,
-      });
-    } catch (error) {
-      console.error('❌ Error loading admin products:', error);
-
-      res.status(500).json({
-        success: false,
-        message: 'Unable to load products.',
-      });
-    }
-  });
 
 app.post(
   '/api/products',
@@ -717,6 +730,12 @@ app.put(
   }
 );
 
+/*
+|--------------------------------------------------------------------------
+| Alterar disponibilidade
+|--------------------------------------------------------------------------
+*/
+
 app.patch(
   '/api/products/:id/availability',
   async (req, res) => {
@@ -771,11 +790,18 @@ app.patch(
 
       res.status(500).json({
         success: false,
-        message: 'Unable to update product availability.',
+        message:
+          'Unable to update product availability.',
       });
     }
   }
 );
+
+/*
+|--------------------------------------------------------------------------
+| Deletar produto
+|--------------------------------------------------------------------------
+*/
 
 app.delete(
   '/api/products/:id',
@@ -821,7 +847,8 @@ app.delete(
 
       res.status(500).json({
         success: false,
-        message: 'Unable to delete product.',
+        message:
+          'Unable to delete product.',
       });
     }
   }
@@ -1053,81 +1080,100 @@ app.post(
 // GET PRODUCT OPTIONS
 // =========================================================
 
-app.get('/api/products/:id/options', async (req, res) => {
-  try {
-    const productId = Number(req.params.id);
+app.get(
+  '/api/products/:id/options',
+  async (req, res) => {
+    try {
+      const productId =
+        Number(req.params.id);
 
-    if (!Number.isInteger(productId)) {
-      return res.status(400).json({
-        error: 'Invalid product ID.',
-      });
-    }
-
-    const result = await pool.query(
-      `
-      SELECT
-        pog.id AS product_option_group_id,
-        og.id AS option_group_id,
-        og.name AS group_name,
-        og.description AS group_description,
-        pog.required,
-        pog.min_selections,
-        pog.max_selections,
-        po.id AS product_option_id,
-        o.id AS option_id,
-        o.name AS option_name,
-        o.description AS option_description,
-        o.price_adjustment
-      FROM product_option_groups pog
-      JOIN option_groups og
-        ON og.id = pog.option_group_id
-      JOIN product_options po
-        ON po.product_option_group_id = pog.id
-      JOIN options o
-        ON o.id = po.option_id
-      WHERE pog.product_id = $1
-        AND og.active = TRUE
-      ORDER BY
-        pog.display_order,
-        po.display_order,
-        o.name;
-      `,
-      [productId]
-    );
-
-    const groups = {};
-
-    for (const row of result.rows) {
-      if (!groups[row.option_group_id]) {
-        groups[row.option_group_id] = {
-          id: row.option_group_id,
-          name: row.group_name,
-          description: row.group_description,
-          required: row.required,
-          min_selections: row.min_selections,
-          max_selections: row.max_selections,
-          options: [],
-        };
+      if (!Number.isInteger(productId)) {
+        return res.status(400).json({
+          error: 'Invalid product ID.',
+        });
       }
 
-      groups[row.option_group_id].options.push({
-        id: row.option_id,
-        name: row.option_name,
-        description: row.option_description,
-        price_adjustment: Number(row.price_adjustment || 0),
+      const result =
+        await pool.query(
+          `
+          SELECT
+            pog.id AS product_option_group_id,
+            og.id AS option_group_id,
+            og.name AS group_name,
+            og.description AS group_description,
+            pog.required,
+            pog.min_selections,
+            pog.max_selections,
+            po.id AS product_option_id,
+            o.id AS option_id,
+            o.name AS option_name,
+            o.description AS option_description,
+            o.price_adjustment
+          FROM product_option_groups pog
+          JOIN option_groups og
+            ON og.id = pog.option_group_id
+          JOIN product_options po
+            ON po.product_option_group_id = pog.id
+          JOIN options o
+            ON o.id = po.option_id
+          WHERE pog.product_id = $1
+            AND og.active = TRUE
+          ORDER BY
+            pog.display_order,
+            po.display_order,
+            o.name;
+          `,
+          [productId]
+        );
+
+      const groups = {};
+
+      for (const row of result.rows) {
+        if (!groups[row.option_group_id]) {
+          groups[row.option_group_id] = {
+            id: row.option_group_id,
+            name: row.group_name,
+            description:
+              row.group_description,
+            required: row.required,
+            min_selections:
+              row.min_selections,
+            max_selections:
+              row.max_selections,
+            options: [],
+          };
+        }
+
+        groups[
+          row.option_group_id
+        ].options.push({
+          id: row.option_id,
+          name: row.option_name,
+          description:
+            row.option_description,
+          price_adjustment:
+            Number(
+              row.price_adjustment || 0
+            ),
+        });
+      }
+
+      res.json(
+        Object.values(groups)
+      );
+    } catch (error) {
+      console.error(
+        'Error loading product options:',
+        error
+      );
+
+      res.status(500).json({
+        error:
+          'Unable to load product options.',
       });
     }
-
-    res.json(Object.values(groups));
-  } catch (error) {
-    console.error('Error loading product options:', error);
-
-    res.status(500).json({
-      error: 'Unable to load product options.',
-    });
   }
-});
-
+);
 
 /*
 |--------------------------------------------------------------------------
