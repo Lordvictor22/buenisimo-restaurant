@@ -1000,58 +1000,46 @@ app.post(
       |--------------------------------------------------------------------------
       */
 const session =
-  await stripe.checkout.sessions.create(
-    {
-      mode: 'payment',
+  await stripe.checkout.sessions.create({
+    mode: 'payment',
 
-      line_items:
-        lineItems,
+    locale: 'en',
 
-      customer_email:
-        customer.email ||
-        undefined,
+    line_items: lineItems,
 
-      metadata: {
-        order_type:
-          orderType,
+    customer_email:
+      customer.email || undefined,
 
-        customer_name:
-          customer.name ||
-          '',
+    metadata: {
+      order_type: orderType,
 
-        customer_phone:
-          customer.phone ||
-          '',
+      customer_name:
+        customer.name || '',
 
-        customer_address:
-          customer.address ||
-          '',
+      customer_phone:
+        customer.phone || '',
 
-        customer_city:
-          customer.city ||
-          '',
+      customer_address:
+        customer.address || '',
 
-        customer_zip_code:
-          customer.zipCode ||
-          '',
+      customer_city:
+        customer.city || '',
 
-        notes:
-          customer.notes ||
-          '',
+      customer_zip_code:
+        customer.zipCode || '',
 
-        items:
-          JSON.stringify(
-            metadataItems
-          ),
-      },
+      notes:
+        customer.notes || '',
 
-      success_url:
-        `${FRONTEND_URL}/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
+      items: JSON.stringify(metadataItems),
+    },
 
-      cancel_url:
-        `${FRONTEND_URL}/payment`,
-    }
-  );
+    success_url:
+      `${FRONTEND_URL}/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
+
+    cancel_url:
+      `${FRONTEND_URL}/payment`,
+  });
       /*
       |--------------------------------------------------------------------------
       | Resposta
