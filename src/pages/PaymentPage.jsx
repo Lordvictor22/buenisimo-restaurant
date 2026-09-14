@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import './PaymentPage.css';
 
+const API_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:4242/api';
+
 function PaymentPage() {
   const [cartItems] = useState(() => {
     const savedCart = localStorage.getItem('buenisimo-cart');
@@ -47,7 +50,7 @@ function PaymentPage() {
       setIsLoading(true);
 
       const response = await fetch(
-        'http://localhost:4242/api/payment/create-checkout-session',
+        `${API_URL}/payment/create-checkout-session`,
         {
           method: 'POST',
           headers: {
@@ -69,7 +72,9 @@ function PaymentPage() {
       }
 
       if (!data.url) {
-        throw new Error('Stripe payment URL was not returned.');
+        throw new Error(
+          'Stripe payment URL was not returned.'
+        );
       }
 
       window.location.href = data.url;
@@ -119,6 +124,7 @@ function PaymentPage() {
 
                 <div>
                   <span>Name</span>
+
                   <strong>
                     {customer.name || 'Not provided'}
                   </strong>
@@ -126,6 +132,7 @@ function PaymentPage() {
 
                 <div>
                   <span>Phone</span>
+
                   <strong>
                     {customer.phone || 'Not provided'}
                   </strong>
@@ -133,6 +140,7 @@ function PaymentPage() {
 
                 <div>
                   <span>Email</span>
+
                   <strong>
                     {customer.email || 'Not provided'}
                   </strong>
@@ -151,7 +159,9 @@ function PaymentPage() {
               <div className="payment-order-type">
 
                 <div className="payment-type-icon">
-                  {orderType === 'delivery' ? '⌂' : '●'}
+                  {orderType === 'delivery'
+                    ? '⌂'
+                    : '●'}
                 </div>
 
                 <div>
@@ -163,9 +173,13 @@ function PaymentPage() {
 
                   {orderType === 'delivery' ? (
                     <p>
-                      {customer.address || 'Address not provided'}
+                      {customer.address ||
+                        'Address not provided'}
+
                       <br />
+
                       {customer.city || ''}
+
                       {customer.zipCode
                         ? `, ${customer.zipCode}`
                         : ''}
@@ -194,7 +208,9 @@ function PaymentPage() {
                 </div>
 
                 <div>
-                  <h3>Secure online payment</h3>
+                  <h3>
+                    Secure online payment
+                  </h3>
 
                   <p>
                     You will be redirected to Stripe to
@@ -247,14 +263,18 @@ function PaymentPage() {
                         alt={item.name}
                       />
                     ) : (
-                      <span>Buenisimo</span>
+                      <span>
+                        Buenisimo
+                      </span>
                     )}
 
                   </div>
 
                   <div className="payment-item-info">
 
-                    <h3>{item.name}</h3>
+                    <h3>
+                      {item.name}
+                    </h3>
 
                     <p>
                       {item.quantity} × $
@@ -265,7 +285,10 @@ function PaymentPage() {
 
                   <strong>
                     $
-                    {(item.price * item.quantity).toFixed(2)}
+                    {(
+                      item.price *
+                      item.quantity
+                    ).toFixed(2)}
                   </strong>
 
                 </div>
@@ -276,16 +299,27 @@ function PaymentPage() {
             <div className="payment-summary">
 
               <div className="payment-summary-row">
-                <span>Items</span>
-                <span>{totalItems}</span>
+
+                <span>
+                  Items
+                </span>
+
+                <span>
+                  {totalItems}
+                </span>
+
               </div>
 
               <div className="payment-summary-total">
-                <span>Total</span>
+
+                <span>
+                  Total
+                </span>
 
                 <strong>
                   ${totalPrice.toFixed(2)}
                 </strong>
+
               </div>
 
             </div>

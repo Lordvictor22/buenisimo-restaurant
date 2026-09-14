@@ -11,6 +11,9 @@ const PORT = process.env.PORT || 4242;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const FRONTEND_URL =
+  process.env.FRONTEND_URL || 'http://localhost:5173';
+
 /*
 |--------------------------------------------------------------------------
 | CORS
@@ -996,61 +999,59 @@ app.post(
       | Criar Checkout Session
       |--------------------------------------------------------------------------
       */
+const session =
+  await stripe.checkout.sessions.create(
+    {
+      mode: 'payment',
 
-      const session =
-        await stripe.checkout.sessions.create(
-          {
-            mode: 'payment',
+      line_items:
+        lineItems,
 
-            line_items:
-              lineItems,
+      customer_email:
+        customer.email ||
+        undefined,
 
-            customer_email:
-              customer.email ||
-              undefined,
+      metadata: {
+        order_type:
+          orderType,
 
-            metadata: {
-              order_type:
-                orderType,
+        customer_name:
+          customer.name ||
+          '',
 
-              customer_name:
-                customer.name ||
-                '',
+        customer_phone:
+          customer.phone ||
+          '',
 
-              customer_phone:
-                customer.phone ||
-                '',
+        customer_address:
+          customer.address ||
+          '',
 
-              customer_address:
-                customer.address ||
-                '',
+        customer_city:
+          customer.city ||
+          '',
 
-              customer_city:
-                customer.city ||
-                '',
+        customer_zip_code:
+          customer.zipCode ||
+          '',
 
-              customer_zip_code:
-                customer.zipCode ||
-                '',
+        notes:
+          customer.notes ||
+          '',
 
-              notes:
-                customer.notes ||
-                '',
+        items:
+          JSON.stringify(
+            metadataItems
+          ),
+      },
 
-              items:
-                JSON.stringify(
-                  metadataItems
-                ),
-            },
+      success_url:
+        `${FRONTEND_URL}/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
 
-            success_url:
-              'http://localhost:5173/order-confirmation?session_id={CHECKOUT_SESSION_ID}',
-
-            cancel_url:
-              'http://localhost:5173/payment',
-          }
-        );
-
+      cancel_url:
+        `${FRONTEND_URL}/payment`,
+    }
+  );
       /*
       |--------------------------------------------------------------------------
       | Resposta
