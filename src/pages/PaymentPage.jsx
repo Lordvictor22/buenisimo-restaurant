@@ -4,29 +4,41 @@ import './PaymentPage.css';
 const API_URL =
   import.meta.env.VITE_API_URL || 'http://localhost:4242/api';
 
+const readStoredValue = (key, fallback) => {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
+    console.error(`Unable to read ${key}:`, error);
+    localStorage.removeItem(key);
+    return fallback;
+  }
+};
+
 function PaymentPage() {
   const [cartItems] = useState(() => {
-    const savedCart = localStorage.getItem('buenisimo-cart');
-
-    return savedCart ? JSON.parse(savedCart) : [];
+    const savedCart = readStoredValue('buenisimo-cart', []);
+    return Array.isArray(savedCart) ? savedCart : [];
   });
 
   const [checkoutData] = useState(() => {
-    const savedCheckout = localStorage.getItem('buenisimo-checkout');
-
-    return savedCheckout ? JSON.parse(savedCheckout) : null;
+    const savedCheckout = readStoredValue('buenisimo-checkout', null);
+    return savedCheckout && typeof savedCheckout === 'object'
+      ? savedCheckout
+      : null;
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const totalItems = cartItems.reduce(
-    (total, item) => total + item.quantity,
+    (total, item) => total + Number(item.quantity || 0),
     0
   );
 
   const totalPrice = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) =>
+      total + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
 
@@ -278,7 +290,7 @@ function PaymentPage() {
 
                     <p>
                       {item.quantity} × $
-                      {item.price.toFixed(2)}
+                      {Number(item.price || 0).toFixed(2)}
                     </p>
 
                   </div>
@@ -286,8 +298,8 @@ function PaymentPage() {
                   <strong>
                     $
                     {(
-                      item.price *
-                      item.quantity
+                      Number(item.price || 0) *
+                      Number(item.quantity || 0)
                     ).toFixed(2)}
                   </strong>
 

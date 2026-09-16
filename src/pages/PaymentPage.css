@@ -165,6 +165,7 @@
 
 .payment-item-info {
   flex: 1;
+  min-width: 0;
 }
 
 .payment-item-info h3 {
@@ -172,6 +173,7 @@
   color: #222222;
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 17px;
+  overflow-wrap: anywhere;
 }
 
 .payment-item-info p {
@@ -231,15 +233,20 @@
 
 @media (max-width: 600px) {
   .payment-page {
-    padding: 45px 25px;
+    padding: 36px 16px 70px;
   }
 
   .payment-card {
-    padding: 22px;
+    padding: 18px;
   }
 
   .payment-header h1 {
-    font-size: 48px;
+    font-size: clamp(38px, 12vw, 52px);
+    overflow-wrap: anywhere;
+  }
+
+  .payment-card h2 {
+    font-size: 24px;
   }
 
   .payment-item-image {
@@ -249,6 +256,16 @@
 
   .payment-item {
     gap: 12px;
+  }
+
+  .payment-method-placeholder {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .payment-method-placeholder h3,
+  .payment-method-placeholder p {
+    overflow-wrap: anywhere;
   }
 }
 .payment-customer-info {

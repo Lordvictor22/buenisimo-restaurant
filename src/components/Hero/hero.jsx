@@ -128,8 +128,8 @@ function Hero() {
           <nav className="hero-nav">
             <a href="/">{t.nav.home}</a>
             <Link to="/menu">{t.nav.menu}</Link>
-            <a href="#about">{t.nav.about}</a>
-            <a href="#gallery">{t.nav.gallery}</a>
+            <Link to="/about">{t.nav.about}</Link>
+            <Link to="/gallery">{t.nav.gallery}</Link>
           </nav>
 
           <div className="hero-header-actions">

@@ -5,6 +5,20 @@ import CloudinaryUpload from '../components/CloudinaryUpload/CloudinaryUpload';
 const API_URL =
   import.meta.env.VITE_API_URL || 'http://localhost:4242/api';
   
+const getAdminToken = () =>
+  localStorage.getItem('buenisimo-admin-token');
+
+const getAuthHeaders = (includeJson = false) => {
+  const token = getAdminToken();
+
+  return {
+    ...(includeJson
+      ? { 'Content-Type': 'application/json' }
+      : {}),
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 const EMPTY_FORM = {
   name: '',
   description: '',
@@ -16,6 +30,7 @@ const EMPTY_FORM = {
 
 function AdminProductsPage() {
   const [products, setProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -32,8 +47,19 @@ function AdminProductsPage() {
       setError('');
 
       const response = await fetch(
-        `${API_URL}/admin/products`
+        `${API_URL}/admin/products`,
+        {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        }
       );
+
+      if (response.status === 401) {
+        localStorage.removeItem('buenisimo-admin-token');
+        localStorage.removeItem('buenisimo-admin');
+        window.location.href = '/admin/login';
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to load products.');
@@ -53,6 +79,12 @@ function AdminProductsPage() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  const filteredProducts = products.filter((product) =>
+    String(product.name || '')
+      .toLocaleLowerCase()
+      .includes(searchTerm.trim().toLocaleLowerCase())
+  );
 
   const handleFormChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -126,9 +158,7 @@ function AdminProductsPage() {
 
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(true),
         body: JSON.stringify({
           name: formData.name.trim(),
           description: formData.description.trim(),
@@ -186,9 +216,7 @@ function AdminProductsPage() {
         `${API_URL}/products/${product.id}/availability`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: getAuthHeaders(true),
           body: JSON.stringify({
             available: !product.available,
           }),
@@ -234,6 +262,7 @@ function AdminProductsPage() {
         `${API_URL}/products/${product.id}`,
         {
           method: 'DELETE',
+          headers: getAuthHeaders(),
         }
       );
 
@@ -281,206 +310,30 @@ function AdminProductsPage() {
             </p>
           </div>
 
-          {!showForm && (
-            <button
-              type="button"
-              className="admin-new-product-button"
-              onClick={handleNewProduct}
-            >
-              + New product
-            </button>
-          )}
+          <button
+            type="button"
+            className="admin-new-product-button"
+            onClick={handleNewProduct}
+          >
+            + New product
+          </button>
         </header>
 
-        {showForm && (
-          <section className="admin-product-form-card">
+        <label className="admin-products-search">
+          <span className="admin-products-search-icon" aria-hidden="true">
+            &#128269;
+          </span>
 
-            <div className="admin-product-form-header">
-              <div>
-                <span className="admin-products-eyebrow">
-                  PRODUCT
-                </span>
-
-                <h2>
-                  {editingProduct
-                    ? 'Edit product'
-                    : 'New product'}
-                </h2>
-
-                <p>
-                  {editingProduct
-                    ? 'Update the product information below.'
-                    : 'Add a new product to the restaurant menu.'}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="admin-form-close"
-                onClick={handleCancelForm}
-                disabled={saving}
-                aria-label="Close form"
-              >
-                ×
-              </button>
-            </div>
-
-            <form
-              className="admin-product-form"
-              onSubmit={handleSubmit}
-            >
-              <div className="admin-form-grid">
-
-                <div className="admin-form-field admin-form-field-full">
-                  <label htmlFor="product-name">
-                    Product name
-                  </label>
-
-                  <input
-                    id="product-name"
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                    placeholder="Example: Arepa Reina Pepiada"
-                    required
-                  />
-                </div>
-
-                <div className="admin-form-field admin-form-field-full">
-                  <label htmlFor="product-description">
-                    Description
-                  </label>
-
-                  <textarea
-                    id="product-description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleFormChange}
-                    placeholder="Describe the product..."
-                    rows="4"
-                  />
-                </div>
-
-                <div className="admin-form-field">
-                  <label htmlFor="product-category">
-                    Category
-                  </label>
-
-                  <select
-                    id="product-category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleFormChange}
-                  >
-                    <option value="Breakfasts">
-                      Breakfasts
-                    </option>
-
-                    <option value="Breakfasts Criollos">
-                      Breakfasts Criollos
-                    </option>
-
-                    <option value="Lunches">
-                      Lunches
-                    </option>
-
-                    <option value="Appetizers">
-                      Appetizers
-                    </option>
-
-                    <option value="Kids">
-                      Kids
-                    </option>
-
-                    <option value="Desserts">
-                      Desserts
-                    </option>
-                  </select>
-                </div>
-
-                <div className="admin-form-field">
-                  <label htmlFor="product-price">
-                    Price
-                  </label>
-
-                  <div className="admin-price-input">
-                    <span>$</span>
-
-                    <input
-                      id="product-price"
-                      name="price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={handleFormChange}
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="admin-form-field admin-form-field-full">
-                  <label>
-                    Product image
-                  </label>
-
-                  <CloudinaryUpload
-                    currentImage={formData.image_url}
-                    onUpload={(imageUrl) => {
-                      setFormData((currentData) => ({
-                        ...currentData,
-                        image_url: imageUrl,
-                      }));
-                    }}
-                  />
-                </div>
-
-                <div className="admin-form-availability">
-                  <label className="admin-checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="available"
-                      checked={formData.available}
-                      onChange={handleFormChange}
-                    />
-
-                    <span>
-                      Product available for customers
-                    </span>
-                  </label>
-                </div>
-
-              </div>
-
-              <div className="admin-product-form-actions">
-
-                <button
-                  type="button"
-                  className="admin-cancel-button"
-                  onClick={handleCancelForm}
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="admin-create-button"
-                  disabled={saving}
-                >
-                  {saving
-                    ? 'Saving...'
-                    : editingProduct
-                      ? 'Save changes'
-                      : 'Create product'}
-                </button>
-
-              </div>
-            </form>
-          </section>
-        )}
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) =>
+              setSearchTerm(event.target.value)
+            }
+            placeholder="Search products by name"
+            aria-label="Search products by name"
+          />
+        </label>
 
         {loading && (
           <div className="admin-products-state">
@@ -503,15 +356,19 @@ function AdminProductsPage() {
 
         {!loading &&
           !error &&
-          products.length === 0 && (
+          (products.length === 0 || filteredProducts.length === 0) && (
             <div className="admin-products-state">
-              <p>No products found.</p>
+              <p>
+                {products.length === 0
+                  ? 'No products found.'
+                  : 'No products match your search.'}
+              </p>
             </div>
           )}
 
         {!loading &&
           !error &&
-          products.length > 0 && (
+          filteredProducts.length > 0 && (
             <section className="admin-products-table-wrapper">
               <table className="admin-products-table">
 
@@ -526,7 +383,7 @@ function AdminProductsPage() {
                 </thead>
 
                 <tbody>
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <tr key={product.id}>
 
                       <td>
@@ -639,6 +496,201 @@ function AdminProductsPage() {
               </table>
             </section>
           )}
+
+        {/* MODAL FORM OVERLAY */}
+        {showForm && (
+          <div className="admin-modal-overlay" onClick={handleCancelForm}>
+            <div 
+              className="admin-modal-content" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="admin-product-form-header">
+                <div>
+                  <span className="admin-products-eyebrow">
+                    PRODUCT
+                  </span>
+
+                  <h2>
+                    {editingProduct
+                      ? 'Edit product'
+                      : 'New product'}
+                  </h2>
+
+                  <p>
+                    {editingProduct
+                      ? 'Update the product information below.'
+                      : 'Add a new product to the restaurant menu.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="admin-form-close"
+                  onClick={handleCancelForm}
+                  disabled={saving}
+                  aria-label="Close form"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form
+                className="admin-product-form"
+                onSubmit={handleSubmit}
+              >
+                <div className="admin-form-grid">
+
+                  <div className="admin-form-field admin-form-field-full">
+                    <label htmlFor="product-name">
+                      Product name
+                    </label>
+
+                    <input
+                      id="product-name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleFormChange}
+                      placeholder="Example: Arepa Reina Pepiada"
+                      required
+                    />
+                  </div>
+
+                  <div className="admin-form-field admin-form-field-full">
+                    <label htmlFor="product-description">
+                      Description
+                    </label>
+
+                    <textarea
+                      id="product-description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleFormChange}
+                      placeholder="Describe the product..."
+                      rows="4"
+                    />
+                  </div>
+
+                  <div className="admin-form-field">
+                    <label htmlFor="product-category">
+                      Category
+                    </label>
+
+                    <select
+                      id="product-category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleFormChange}
+                    >
+                      <option value="Breakfasts">
+                        Breakfasts
+                      </option>
+
+                      <option value="Breakfasts Criollos">
+                        Breakfasts Criollos
+                      </option>
+
+                      <option value="Lunches">
+                        Lunches
+                      </option>
+
+                      <option value="Appetizers">
+                        Appetizers
+                      </option>
+
+                      <option value="Kids">
+                        Kids
+                      </option>
+
+                      <option value="Desserts">
+                        Desserts
+                      </option>
+                    </select>
+                  </div>
+
+                  <div className="admin-form-field">
+                    <label htmlFor="product-price">
+                      Price
+                    </label>
+
+                    <div className="admin-price-input">
+                      <span>$</span>
+
+                      <input
+                        id="product-price"
+                        name="price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.price}
+                        onChange={handleFormChange}
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="admin-form-field admin-form-field-full">
+                    <label>
+                      Product image
+                    </label>
+
+                    <CloudinaryUpload
+                      currentImage={formData.image_url}
+                      onUpload={(imageUrl) => {
+                        setFormData((currentData) => ({
+                          ...currentData,
+                          image_url: imageUrl,
+                        }));
+                      }}
+                    />
+                  </div>
+
+                  <div className="admin-form-availability">
+                    <label className="admin-checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="available"
+                        checked={formData.available}
+                        onChange={handleFormChange}
+                      />
+
+                      <span>
+                        Product available for customers
+                      </span>
+                    </label>
+                  </div>
+
+                </div>
+
+                <div className="admin-product-form-actions">
+
+                  <button
+                    type="button"
+                    className="admin-cancel-button"
+                    onClick={handleCancelForm}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="admin-create-button"
+                    disabled={saving}
+                  >
+                    {saving
+                      ? 'Saving...'
+                      : editingProduct
+                        ? 'Save changes'
+                        : 'Create product'}
+                  </button>
+
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
       </div>
     </main>

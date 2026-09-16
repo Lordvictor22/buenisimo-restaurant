@@ -1,34 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import './OrderConfirmationPage.css';
 
+const readStoredValue = (key, fallback) => {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
+    console.error(`Unable to read ${key}:`, error);
+    localStorage.removeItem(key);
+    return fallback;
+  }
+};
+
 function OrderConfirmationPage() {
   const [searchParams] = useSearchParams();
-  const [checkoutData, setCheckoutData] = useState(null);
-  const [cartItems, setCartItems] = useState([]);
+  const [checkoutData] = useState(() => {
+    const savedCheckout = readStoredValue('buenisimo-checkout', null);
+    return savedCheckout && typeof savedCheckout === 'object'
+      ? savedCheckout
+      : null;
+  });
+  const [cartItems] = useState(() => {
+    const savedCart = readStoredValue('buenisimo-cart', []);
+    return Array.isArray(savedCart) ? savedCart : [];
+  });
 
   const sessionId = searchParams.get('session_id');
 
-  useEffect(() => {
-    const savedCheckout = localStorage.getItem('buenisimo-checkout');
-    const savedCart = localStorage.getItem('buenisimo-cart');
-
-    if (savedCheckout) {
-      setCheckoutData(JSON.parse(savedCheckout));
-    }
-
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
-  }, []);
-
   const totalItems = cartItems.reduce(
-    (total, item) => total + item.quantity,
+    (total, item) => total + Number(item.quantity || 0),
     0
   );
 
   const totalPrice = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) =>
+      total + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
 
@@ -122,13 +129,16 @@ function OrderConfirmationPage() {
                   <strong>{item.name}</strong>
                   <p>
                     {item.quantity} × $
-                    {item.price.toFixed(2)}
+                    {Number(item.price || 0).toFixed(2)}
                   </p>
                 </div>
 
                 <strong>
                   $
-                  {(item.price * item.quantity).toFixed(2)}
+                  {(
+                    Number(item.price || 0) *
+                    Number(item.quantity || 0)
+                  ).toFixed(2)}
                 </strong>
               </div>
             ))}

@@ -49,8 +49,8 @@ function Header() {
         <nav className="header-nav">
           <a href="/">{t.nav.home}</a>
           <a href="/menu">{t.nav.menu}</a>
-          <a href="#about">{t.nav.about}</a>
-          <a href="#gallery">{t.nav.gallery}</a>
+          <a href="/about">{t.nav.about}</a>
+          <a href="/gallery">{t.nav.gallery}</a>
           <a href="#location">{t.nav.location}</a>
         </nav>
 

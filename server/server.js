@@ -3,16 +3,21 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import Stripe from 'stripe';
 import pool from './db.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4242;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY
+);
 
 const FRONTEND_URL =
-  process.env.FRONTEND_URL || 'http://localhost:5173';
+  process.env.FRONTEND_URL ||
+  'http://localhost:5173';
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +34,13 @@ app.use(
   })
 );
 
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 /*
 |--------------------------------------------------------------------------
 | Stripe Webhook
@@ -36,14 +48,17 @@ app.use(
 |
 | IMPORTANTE:
 | O webhook precisa ficar ANTES do express.json()
-| porque o Stripe precisa do body original para validar a assinatura.
+| porque o Stripe precisa do body original para
+| validar a assinatura.
 |
 |--------------------------------------------------------------------------
 */
 
 app.post(
   '/api/webhooks/stripe',
-  express.raw({ type: 'application/json' }),
+  express.raw({
+    type: 'application/json',
+  }),
   async (req, res) => {
     const signature =
       req.headers['stripe-signature'];
@@ -51,20 +66,23 @@ app.post(
     let event;
 
     try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        signature,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
+      event =
+        stripe.webhooks.constructEvent(
+          req.body,
+          signature,
+          process.env.STRIPE_WEBHOOK_SECRET
+        );
     } catch (error) {
       console.error(
         'Webhook signature verification failed:',
         error.message
       );
 
-      return res.status(400).send(
-        `Webhook Error: ${error.message}`
-      );
+      return res
+        .status(400)
+        .send(
+          `Webhook Error: ${error.message}`
+        );
     }
 
     console.log(
@@ -82,7 +100,8 @@ app.post(
       event.type ===
       'checkout.session.completed'
     ) {
-      const session = event.data.object;
+      const session =
+        event.data.object;
 
       try {
         console.log(
@@ -118,7 +137,8 @@ app.post(
           session.customer_email || '';
 
         const orderType =
-          metadata.order_type === 'pickup'
+          metadata.order_type ===
+          'pickup'
             ? 'pickup'
             : 'delivery';
 
@@ -295,7 +315,8 @@ app.post(
             );
 
           if (
-            productResult.rows.length === 0
+            productResult.rows.length ===
+            0
           ) {
             console.error(
               'Product not found:',
@@ -400,7 +421,7 @@ app.post(
       }
     }
 
-    res.json({
+    return res.json({
       received: true,
     });
   }
@@ -412,7 +433,222 @@ app.post(
 |--------------------------------------------------------------------------
 */
 
-app.use(express.json());
+app.use(express.json({ limit: '32kb' }));
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN LOGIN
+|--------------------------------------------------------------------------
+*/
+
+app.post(
+  '/api/admin/login',
+  async (req, res) => {
+    try {
+      const {
+        email,
+        password,
+      } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'Email and password are required.',
+        });
+      }
+
+      const normalizedEmail =
+        email.toLowerCase().trim();
+
+      const result =
+        await pool.query(
+          `
+          SELECT
+            id,
+            name,
+            email,
+            password_hash,
+            role,
+            active
+          FROM admin_users
+          WHERE LOWER(email) = LOWER($1)
+          LIMIT 1
+          `,
+          [normalizedEmail]
+        );
+
+      if (
+        result.rows.length === 0
+      ) {
+        return res.status(401).json({
+          success: false,
+          message:
+            'Invalid email or password.',
+        });
+      }
+
+      const admin =
+        result.rows[0];
+
+      /*
+      |--------------------------------------------------------------------------
+      | Verificar conta ativa
+      |--------------------------------------------------------------------------
+      */
+
+      if (!admin.active) {
+        return res.status(403).json({
+          success: false,
+          message:
+            'This account is inactive.',
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Verificar senha
+      |--------------------------------------------------------------------------
+      */
+
+      const passwordValid =
+        await bcrypt.compare(
+          password,
+          admin.password_hash
+        );
+
+      if (!passwordValid) {
+        return res.status(401).json({
+          success: false,
+          message:
+            'Invalid email or password.',
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Criar JWT
+      |--------------------------------------------------------------------------
+      */
+
+      const token =
+        jwt.sign(
+          {
+            id: admin.id,
+            email: admin.email,
+            role: admin.role,
+          },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: '8h',
+          }
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Resposta
+      |--------------------------------------------------------------------------
+      */
+
+      return res.json({
+        success: true,
+        token,
+        admin: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+        },
+      });
+    } catch (error) {
+      console.error(
+        'Admin login error:',
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          'Unable to process login.',
+      });
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| Middleware de autenticação administrativa
+|--------------------------------------------------------------------------
+*/
+
+function requireAdmin(
+  req,
+  res,
+  next
+) {
+  try {
+    const authHeader =
+      req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        message:
+          'Authentication required.',
+      });
+    }
+
+    const parts =
+      authHeader.split(' ');
+
+    if (
+      parts.length !== 2 ||
+      parts[0] !== 'Bearer'
+    ) {
+      return res.status(401).json({
+        success: false,
+        message:
+          'Invalid authentication format.',
+      });
+    }
+
+    const token =
+      parts[1];
+
+    const decoded =
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET
+      );
+
+    if (
+      !decoded ||
+      !decoded.id
+    ) {
+      return res.status(401).json({
+        success: false,
+        message:
+          'Invalid authentication token.',
+      });
+    }
+
+    req.admin =
+      decoded;
+
+    next();
+  } catch (error) {
+    console.error(
+      'Admin authentication error:',
+      error.message
+    );
+
+    return res.status(401).json({
+      success: false,
+      message:
+        'Invalid or expired authentication token.',
+    });
+  }
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -420,13 +656,16 @@ app.use(express.json());
 |--------------------------------------------------------------------------
 */
 
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    message:
-      'Buenisimo server is running',
-  });
-});
+app.get(
+  '/api/health',
+  (req, res) => {
+    return res.json({
+      success: true,
+      message:
+        'Buenisimo server is running',
+    });
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -455,9 +694,10 @@ app.get(
           `
         );
 
-      res.json({
+      return res.json({
         success: true,
-        products: result.rows,
+        products:
+          result.rows,
       });
     } catch (error) {
       console.error(
@@ -465,10 +705,250 @@ app.get(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message:
           'Unable to load products.',
+      });
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN - DASHBOARD
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/api/admin/dashboard',
+  requireAdmin,
+  async (req, res) => {
+    try {
+      /*
+      |--------------------------------------------------------------------------
+      | Vendas de hoje
+      |--------------------------------------------------------------------------
+      */
+
+      const salesResult =
+        await pool.query(
+          `
+          SELECT
+            COALESCE(
+              SUM(total),
+              0
+            ) AS today_sales
+          FROM orders
+          WHERE
+            created_at >= CURRENT_DATE
+            AND status <> 'cancelled'
+          `
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Pedidos de hoje
+      |--------------------------------------------------------------------------
+      */
+
+      const ordersResult =
+        await pool.query(
+          `
+          SELECT
+            COUNT(*) AS today_orders
+          FROM orders
+          WHERE
+            created_at >= CURRENT_DATE
+            AND status <> 'cancelled'
+          `
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Pedidos pendentes
+      |--------------------------------------------------------------------------
+      |
+      | Consideramos como pendentes todos os pedidos
+      | que ainda não estejam concluídos ou cancelados.
+      |
+      |--------------------------------------------------------------------------
+      */
+
+      const pendingResult =
+        await pool.query(
+          `
+          SELECT
+            COUNT(*) AS pending_orders
+          FROM orders
+          WHERE
+            status NOT IN (
+              'completed',
+              'cancelled'
+            )
+          `
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Clientes
+      |--------------------------------------------------------------------------
+      */
+
+      const customersResult =
+        await pool.query(
+          `
+          SELECT
+            COUNT(
+              DISTINCT LOWER(
+                TRIM(customer_email)
+              )
+            ) AS total_customers
+          FROM orders
+          WHERE
+            customer_email IS NOT NULL
+            AND TRIM(customer_email) <> ''
+          `
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Resposta
+      |--------------------------------------------------------------------------
+      */
+
+      return res.json({
+        success: true,
+
+        dashboard: {
+          todaySales:
+            Number(
+              salesResult.rows[0]
+                ?.today_sales || 0
+            ),
+
+          todayOrders:
+            Number(
+              ordersResult.rows[0]
+                ?.today_orders || 0
+            ),
+
+          pendingOrders:
+            Number(
+              pendingResult.rows[0]
+                ?.pending_orders || 0
+            ),
+
+          totalCustomers:
+            Number(
+              customersResult.rows[0]
+                ?.total_customers || 0
+            ),
+        },
+      });
+    } catch (error) {
+      console.error(
+        '❌ Error loading admin dashboard:',
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          'Unable to load dashboard data.',
+      });
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| Admin - listar todos os pedidos
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/api/admin/orders',
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result =
+        await pool.query(
+          `
+          SELECT
+            id,
+            customer_name,
+            customer_email,
+            total AS total_price,
+            status,
+            order_type,
+            created_at
+          FROM orders
+          ORDER BY created_at DESC, id DESC
+          `
+        );
+
+      return res.json({
+        success: true,
+        orders: result.rows,
+      });
+    } catch (error) {
+      console.error(
+        '❌ Error loading admin orders:',
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          'Unable to load orders.',
+      });
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| Admin - listar clientes
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/api/admin/customers',
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result =
+        await pool.query(
+          `
+          SELECT
+            MAX(customer_name) AS customer_name,
+            LOWER(TRIM(customer_email)) AS customer_email,
+            COUNT(*) AS order_count,
+            COALESCE(SUM(total), 0) AS total_spent,
+            MAX(created_at) AS last_order_at
+          FROM orders
+          WHERE customer_email IS NOT NULL
+            AND TRIM(customer_email) <> ''
+          GROUP BY LOWER(TRIM(customer_email))
+          ORDER BY last_order_at DESC
+          `
+        );
+
+      return res.json({
+        success: true,
+        customers: result.rows,
+      });
+    } catch (error) {
+      console.error(
+        '❌ Error loading admin customers:',
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          'Unable to load customers.',
       });
     }
   }
@@ -480,39 +960,48 @@ app.get(
 |--------------------------------------------------------------------------
 */
 
-app.get('/api/admin/products', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT
-        id,
-        name,
-        description,
-        category,
-        price,
-        image_url,
-        available,
-        created_at,
-        updated_at
-      FROM products
-      ORDER BY id ASC
-    `);
+app.get(
+  '/api/admin/products',
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result =
+        await pool.query(
+          `
+          SELECT
+            id,
+            name,
+            description,
+            category,
+            price,
+            image_url,
+            available,
+            created_at,
+            updated_at
+          FROM products
+          ORDER BY id ASC
+          `
+        );
 
-    res.json({
-      success: true,
-      products: result.rows,
-    });
-  } catch (error) {
-    console.error(
-      '❌ Error loading admin products:',
-      error
-    );
+      return res.json({
+        success: true,
+        products:
+          result.rows,
+      });
+    } catch (error) {
+      console.error(
+        '❌ Error loading admin products:',
+        error
+      );
 
-    res.status(500).json({
-      success: false,
-      message: 'Unable to load products.',
-    });
+      return res.status(500).json({
+        success: false,
+        message:
+          'Unable to load products.',
+      });
+    }
   }
-});
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -522,6 +1011,7 @@ app.get('/api/admin/products', async (req, res) => {
 
 app.post(
   '/api/products',
+  requireAdmin,
   async (req, res) => {
     try {
       const {
@@ -556,7 +1046,8 @@ app.post(
       ) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid price.',
+          message:
+            'Invalid price.',
         });
       }
 
@@ -589,15 +1080,19 @@ app.post(
             numericPrice,
             image_url?.trim() ||
               null,
-            available !== undefined
-              ? Boolean(available)
+            available !==
+            undefined
+              ? Boolean(
+                  available
+                )
               : true,
           ]
         );
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
-        product: result.rows[0],
+        product:
+          result.rows[0],
       });
     } catch (error) {
       console.error(
@@ -605,7 +1100,7 @@ app.post(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message:
           'Unable to create product.',
@@ -622,9 +1117,11 @@ app.post(
 
 app.put(
   '/api/products/:id',
+  requireAdmin,
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } =
+        req.params;
 
       const {
         name,
@@ -707,16 +1204,20 @@ app.put(
             numericPrice,
             image_url?.trim() ||
               null,
-            available !== undefined
-              ? Boolean(available)
+            available !==
+            undefined
+              ? Boolean(
+                  available
+                )
               : true,
             id,
           ]
         );
 
-      res.json({
+      return res.json({
         success: true,
-        product: result.rows[0],
+        product:
+          result.rows[0],
       });
     } catch (error) {
       console.error(
@@ -724,7 +1225,7 @@ app.put(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message:
           'Unable to update product.',
@@ -741,49 +1242,67 @@ app.put(
 
 app.patch(
   '/api/products/:id/availability',
+  requireAdmin,
   async (req, res) => {
     try {
-      const { id } = req.params;
-      const { available } = req.body;
+      const { id } =
+        req.params;
 
-      if (typeof available !== 'boolean') {
+      const { available } =
+        req.body;
+
+      if (
+        typeof available !==
+        'boolean'
+      ) {
         return res.status(400).json({
           success: false,
-          message: 'available must be a boolean.',
+          message:
+            'available must be a boolean.',
         });
       }
 
-      const existingProduct = await pool.query(
-        `
-        SELECT id
-        FROM products
-        WHERE id = $1
-        `,
-        [id]
-      );
+      const existingProduct =
+        await pool.query(
+          `
+          SELECT id
+          FROM products
+          WHERE id = $1
+          `,
+          [id]
+        );
 
-      if (existingProduct.rows.length === 0) {
+      if (
+        existingProduct.rows.length ===
+        0
+      ) {
         return res.status(404).json({
           success: false,
-          message: 'Product not found.',
+          message:
+            'Product not found.',
         });
       }
 
-      const result = await pool.query(
-        `
-        UPDATE products
-        SET
-          available = $1,
-          updated_at = NOW()
-        WHERE id = $2
-        RETURNING *
-        `,
-        [available, id]
-      );
+      const result =
+        await pool.query(
+          `
+          UPDATE products
+          SET
+            available = $1,
+            updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+          `,
+          [
+            available,
+            id,
+          ]
+        );
 
-      res.json({
+      return res.json({
         success: true,
-        product: result.rows[0],
+        product:
+          result.rows[0],
       });
     } catch (error) {
       console.error(
@@ -791,7 +1310,7 @@ app.patch(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message:
           'Unable to update product availability.',
@@ -808,39 +1327,49 @@ app.patch(
 
 app.delete(
   '/api/products/:id',
+  requireAdmin,
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } =
+        req.params;
 
-      const existingProduct = await pool.query(
-        `
-        SELECT id
-        FROM products
-        WHERE id = $1
-        `,
-        [id]
-      );
+      const existingProduct =
+        await pool.query(
+          `
+          SELECT id
+          FROM products
+          WHERE id = $1
+          `,
+          [id]
+        );
 
-      if (existingProduct.rows.length === 0) {
+      if (
+        existingProduct.rows.length ===
+        0
+      ) {
         return res.status(404).json({
           success: false,
-          message: 'Product not found.',
+          message:
+            'Product not found.',
         });
       }
 
-      const result = await pool.query(
-        `
-        DELETE FROM products
-        WHERE id = $1
-        RETURNING *
-        `,
-        [id]
-      );
+      const result =
+        await pool.query(
+          `
+          DELETE FROM products
+          WHERE id = $1
+          RETURNING *
+          `,
+          [id]
+        );
 
-      res.json({
+      return res.json({
         success: true,
-        message: 'Product deleted successfully.',
-        product: result.rows[0],
+        message:
+          'Product deleted successfully.',
+        product:
+          result.rows[0],
       });
     } catch (error) {
       console.error(
@@ -848,7 +1377,7 @@ app.delete(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message:
           'Unable to delete product.',
@@ -881,11 +1410,13 @@ app.post(
       if (
         !items ||
         !Array.isArray(items) ||
-        items.length === 0
+        items.length === 0 ||
+        items.length > 50
       ) {
         return res.status(400).json({
           success: false,
-          message: 'Cart is empty.',
+          message:
+            'Cart is empty or too large.',
         });
       }
 
@@ -924,7 +1455,9 @@ app.post(
         const product =
           productResult.rows[0];
 
-        if (!product.available) {
+        if (
+          !product.available
+        ) {
           throw new Error(
             `Product unavailable: ${product.name}`
           );
@@ -955,8 +1488,9 @@ app.post(
 
             unit_amount:
               Math.round(
-                Number(product.price) *
-                  100
+                Number(
+                  product.price
+                ) * 100
               ),
           },
 
@@ -974,6 +1508,73 @@ app.post(
         checkoutData?.customer ||
         {};
 
+      const customerFields = {
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        address: customer.address,
+        city: customer.city,
+        zipCode: customer.zipCode,
+        notes: customer.notes,
+      };
+
+      const fieldLimits = {
+        name: 100,
+        phone: 30,
+        email: 254,
+        address: 200,
+        city: 100,
+        zipCode: 20,
+        notes: 500,
+      };
+
+      for (const [field, value] of Object.entries(customerFields)) {
+        if (value !== undefined && value !== null && typeof value !== 'string') {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid customer ${field}.`,
+          });
+        }
+
+        if (String(value || '').length > fieldLimits[field]) {
+          return res.status(400).json({
+            success: false,
+            message: `Customer ${field} is too long.`,
+          });
+        }
+      }
+
+      const normalizedCustomer = Object.fromEntries(
+        Object.entries(customerFields).map(([field, value]) => [
+          field,
+          String(value || '').trim(),
+        ])
+      );
+
+      if (
+        !normalizedCustomer.name ||
+        !normalizedCustomer.phone ||
+        !normalizedCustomer.email ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedCustomer.email)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid customer name, phone and email are required.',
+        });
+      }
+
+      if (
+        checkoutData?.orderType !== 'pickup' &&
+        (!normalizedCustomer.address ||
+          !normalizedCustomer.city ||
+          !normalizedCustomer.zipCode)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Delivery address, city and ZIP code are required.',
+        });
+      }
+
       const orderType =
         checkoutData?.orderType ===
         'pickup'
@@ -989,9 +1590,10 @@ app.post(
       const metadataItems =
         items.map((item) => ({
           id: Number(item.id),
-          quantity: Number(
-            item.quantity
-          ),
+          quantity:
+            Number(
+              item.quantity
+            ),
         }));
 
       /*
@@ -999,56 +1601,73 @@ app.post(
       | Criar Checkout Session
       |--------------------------------------------------------------------------
       */
-const session =
-  await stripe.checkout.sessions.create({
-    mode: 'payment',
 
-    locale: 'en',
+      const session =
+        await stripe.checkout.sessions.create(
+          {
+            mode: 'payment',
 
-    line_items: lineItems,
+            locale: 'en',
 
-    customer_email:
-      customer.email || undefined,
+            line_items:
+              lineItems,
 
-    metadata: {
-      order_type: orderType,
+            customer_email:
+              normalizedCustomer.email ||
+              undefined,
 
-      customer_name:
-        customer.name || '',
+            metadata: {
+              order_type:
+                orderType,
 
-      customer_phone:
-        customer.phone || '',
+              customer_name:
+                normalizedCustomer.name ||
+                '',
 
-      customer_address:
-        customer.address || '',
+              customer_phone:
+                normalizedCustomer.phone ||
+                '',
 
-      customer_city:
-        customer.city || '',
+              customer_address:
+                normalizedCustomer.address ||
+                '',
 
-      customer_zip_code:
-        customer.zipCode || '',
+              customer_city:
+                normalizedCustomer.city ||
+                '',
 
-      notes:
-        customer.notes || '',
+              customer_zip_code:
+                normalizedCustomer.zipCode ||
+                '',
 
-      items: JSON.stringify(metadataItems),
-    },
+              notes:
+                normalizedCustomer.notes ||
+                '',
 
-    success_url:
-      `${FRONTEND_URL}/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
+              items:
+                JSON.stringify(
+                  metadataItems
+                ),
+            },
 
-    cancel_url:
-      `${FRONTEND_URL}/payment`,
-  });
+            success_url:
+              `${FRONTEND_URL}/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
+
+            cancel_url:
+              `${FRONTEND_URL}/payment`,
+          }
+        );
+
       /*
       |--------------------------------------------------------------------------
       | Resposta
       |--------------------------------------------------------------------------
       */
 
-      res.json({
+      return res.json({
         success: true,
-        url: session.url,
+        url:
+          session.url,
       });
     } catch (error) {
       console.error(
@@ -1056,7 +1675,7 @@ const session =
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message:
           'Unable to create payment session.',
@@ -1065,20 +1684,29 @@ const session =
   }
 );
 
-// =========================================================
-// GET PRODUCT OPTIONS
-// =========================================================
+/*
+|--------------------------------------------------------------------------
+| GET PRODUCT OPTIONS
+|--------------------------------------------------------------------------
+*/
 
 app.get(
   '/api/products/:id/options',
   async (req, res) => {
     try {
       const productId =
-        Number(req.params.id);
+        Number(
+          req.params.id
+        );
 
-      if (!Number.isInteger(productId)) {
+      if (
+        !Number.isInteger(
+          productId
+        )
+      ) {
         return res.status(400).json({
-          error: 'Invalid product ID.',
+          error:
+            'Invalid product ID.',
         });
       }
 
@@ -1110,25 +1738,42 @@ app.get(
           ORDER BY
             pog.display_order,
             po.display_order,
-            o.name;
+            o.name
           `,
           [productId]
         );
 
       const groups = {};
 
-      for (const row of result.rows) {
-        if (!groups[row.option_group_id]) {
-          groups[row.option_group_id] = {
-            id: row.option_group_id,
-            name: row.group_name,
+      for (
+        const row of result.rows
+      ) {
+        if (
+          !groups[
+            row.option_group_id
+          ]
+        ) {
+          groups[
+            row.option_group_id
+          ] = {
+            id:
+              row.option_group_id,
+
+            name:
+              row.group_name,
+
             description:
               row.group_description,
-            required: row.required,
+
+            required:
+              row.required,
+
             min_selections:
               row.min_selections,
+
             max_selections:
               row.max_selections,
+
             options: [],
           };
         }
@@ -1136,18 +1781,24 @@ app.get(
         groups[
           row.option_group_id
         ].options.push({
-          id: row.option_id,
-          name: row.option_name,
+          id:
+            row.option_id,
+
+          name:
+            row.option_name,
+
           description:
             row.option_description,
+
           price_adjustment:
             Number(
-              row.price_adjustment || 0
+              row.price_adjustment ||
+                0
             ),
         });
       }
 
-      res.json(
+      return res.json(
         Object.values(groups)
       );
     } catch (error) {
@@ -1156,7 +1807,7 @@ app.get(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         error:
           'Unable to load product options.',
       });
@@ -1170,8 +1821,11 @@ app.get(
 |--------------------------------------------------------------------------
 */
 
-app.listen(PORT, () => {
-  console.log(
-    `Buenisimo server running on http://localhost:${PORT}`
-  );
-});
+app.listen(
+  PORT,
+  () => {
+    console.log(
+      `Buenisimo server running on http://localhost:${PORT}`
+    );
+  }
+);

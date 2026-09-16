@@ -1,30 +1,15 @@
 import { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './CheckoutPage.css';
 import { LanguageContext } from '../context/LanguageContext';
+import { CartContext } from '../context/CartContext';
 
 function CheckoutPage() {
   const { t } = useContext(LanguageContext);
+  const { cartItems } = useContext(CartContext);
+  const navigate = useNavigate();
 
-  const [cartItems] = useState(() => {
-    const savedCart =
-      localStorage.getItem('buenisimo-cart');
-
-    try {
-      return savedCart
-        ? JSON.parse(savedCart)
-        : [];
-    } catch (error) {
-      console.error(
-        'Error reading cart:',
-        error
-      );
-
-      return [];
-    }
-  });
-
-  const [orderType, setOrderType] =
-    useState('delivery');
+  const [orderType, setOrderType] = useState('delivery');
 
   const [customer, setCustomer] = useState({
     name: '',
@@ -43,16 +28,13 @@ function CheckoutPage() {
   */
 
   const totalItems = cartItems.reduce(
-    (total, item) =>
-      total + Number(item.quantity || 0),
+    (total, item) => total + Number(item.quantity || 0),
     0
   );
 
   const totalPrice = cartItems.reduce(
     (total, item) =>
-      total +
-      Number(item.price || 0) *
-        Number(item.quantity || 0),
+      total + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
 
@@ -105,9 +87,7 @@ function CheckoutPage() {
 
     if (orderType === 'delivery') {
       if (!customer.address.trim()) {
-        alert(
-          'Please enter your delivery address.'
-        );
+        alert('Please enter your delivery address.');
         return;
       }
 
@@ -134,7 +114,7 @@ function CheckoutPage() {
       JSON.stringify(checkoutData)
     );
 
-    window.location.href = '/payment';
+    navigate('/payment');
   };
 
   /*
@@ -193,13 +173,9 @@ function CheckoutPage() {
                   <button
                     type="button"
                     className={`checkout-method ${
-                      orderType === 'delivery'
-                        ? 'active'
-                        : ''
+                      orderType === 'delivery' ? 'active' : ''
                     }`}
-                    onClick={() =>
-                      setOrderType('delivery')
-                    }
+                    onClick={() => setOrderType('delivery')}
                   >
                     {t.checkout.delivery}
                   </button>
@@ -207,13 +183,9 @@ function CheckoutPage() {
                   <button
                     type="button"
                     className={`checkout-method ${
-                      orderType === 'pickup'
-                        ? 'active'
-                        : ''
+                      orderType === 'pickup' ? 'active' : ''
                     }`}
-                    onClick={() =>
-                      setOrderType('pickup')
-                    }
+                    onClick={() => setOrderType('pickup')}
                   >
                     {t.checkout.pickup}
                   </button>
@@ -247,13 +219,8 @@ function CheckoutPage() {
                       name="name"
                       type="text"
                       value={customer.name}
-                      onChange={
-                        handleCustomerChange
-                      }
-                      placeholder={
-                        t.checkout
-                          .fullNamePlaceholder
-                      }
+                      onChange={handleCustomerChange}
+                      placeholder={t.checkout.fullNamePlaceholder}
                       required
                     />
 
@@ -272,13 +239,8 @@ function CheckoutPage() {
                       name="phone"
                       type="tel"
                       value={customer.phone}
-                      onChange={
-                        handleCustomerChange
-                      }
-                      placeholder={
-                        t.checkout
-                          .phonePlaceholder
-                      }
+                      onChange={handleCustomerChange}
+                      placeholder={t.checkout.phonePlaceholder}
                     />
 
                   </div>
@@ -296,13 +258,8 @@ function CheckoutPage() {
                       name="email"
                       type="email"
                       value={customer.email}
-                      onChange={
-                        handleCustomerChange
-                      }
-                      placeholder={
-                        t.checkout
-                          .emailPlaceholder
-                      }
+                      onChange={handleCustomerChange}
+                      placeholder={t.checkout.emailPlaceholder}
                     />
 
                   </div>
@@ -319,13 +276,8 @@ function CheckoutPage() {
                       id="notes"
                       name="notes"
                       value={customer.notes}
-                      onChange={
-                        handleCustomerChange
-                      }
-                      placeholder={
-                        t.checkout
-                          .notesPlaceholder
-                      }
+                      onChange={handleCustomerChange}
+                      placeholder={t.checkout.notesPlaceholder}
                       rows="4"
                     />
 
@@ -361,13 +313,8 @@ function CheckoutPage() {
                         name="address"
                         type="text"
                         value={customer.address}
-                        onChange={
-                          handleCustomerChange
-                        }
-                        placeholder={
-                          t.checkout
-                            .addressPlaceholder
-                        }
+                        onChange={handleCustomerChange}
+                        placeholder={t.checkout.addressPlaceholder}
                       />
 
                     </div>
@@ -385,13 +332,8 @@ function CheckoutPage() {
                         name="city"
                         type="text"
                         value={customer.city}
-                        onChange={
-                          handleCustomerChange
-                        }
-                        placeholder={
-                          t.checkout
-                            .cityPlaceholder
-                        }
+                        onChange={handleCustomerChange}
+                        placeholder={t.checkout.cityPlaceholder}
                       />
 
                     </div>
@@ -409,13 +351,8 @@ function CheckoutPage() {
                         name="zipCode"
                         type="text"
                         value={customer.zipCode}
-                        onChange={
-                          handleCustomerChange
-                        }
-                        placeholder={
-                          t.checkout
-                            .zipCodePlaceholder
-                        }
+                        onChange={handleCustomerChange}
+                        placeholder={t.checkout.zipCodePlaceholder}
                       />
 
                     </div>
@@ -463,18 +400,11 @@ function CheckoutPage() {
                     item.cartKey ||
                     `${item.id}-${index}`;
 
-                  const quantity =
-                    Number(
-                      item.quantity || 0
-                    );
+                  const quantity = Number(item.quantity || 0);
 
-                  const price =
-                    Number(
-                      item.price || 0
-                    );
+                  const price = Number(item.price || 0);
 
-                  const itemTotal =
-                    price * quantity;
+                  const itemTotal = price * quantity;
 
                   return (
                     <div
@@ -510,30 +440,21 @@ function CheckoutPage() {
                         {/* SELECTED OPTIONS */}
 
                         {item.selectedOptions &&
-                          item.selectedOptions.length >
-                            0 && (
+                          item.selectedOptions.length > 0 && (
                             <div className="checkout-item-options">
 
                               {item.selectedOptions.map(
-                                (
-                                  option,
-                                  optionIndex
-                                ) => (
+                                (option, optionIndex) => (
                                   <div
                                     className="checkout-item-option"
                                     key={`${option.option_id}-${optionIndex}`}
                                   >
                                     <span>
-                                      {
-                                        option.group_name
-                                      }
-                                      :
+                                      {option.group_name}:
                                     </span>
 
                                     <strong>
-                                      {
-                                        option.option_name
-                                      }
+                                      {option.option_name}
                                     </strong>
                                   </div>
                                 )
@@ -543,8 +464,7 @@ function CheckoutPage() {
                           )}
 
                         <p>
-                          {quantity} × $
-                          {price.toFixed(2)}
+                          {quantity} × ${price.toFixed(2)}
                         </p>
 
                       </div>
@@ -552,10 +472,7 @@ function CheckoutPage() {
                       {/* ITEM TOTAL */}
 
                       <div className="checkout-item-total">
-                        $
-                        {itemTotal.toFixed(
-                          2
-                        )}
+                        ${itemTotal.toFixed(2)}
                       </div>
 
                     </div>
@@ -599,9 +516,7 @@ function CheckoutPage() {
                 <button
                   type="button"
                   className="checkout-payment-button"
-                  onClick={
-                    handleContinueToPayment
-                  }
+                  onClick={handleContinueToPayment}
                 >
                   Continue to payment
                 </button>
@@ -618,4 +533,4 @@ function CheckoutPage() {
   );
 }
 
-export default CheckoutPage;  
+export default CheckoutPage;

@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import {
   FiGlobe,
   FiChevronDown,
+  FiSearch,
 } from 'react-icons/fi';
 import { LanguageContext } from '../../context/LanguageContext';
 import Cart from '../Cart/Cart';
@@ -15,6 +16,7 @@ function Menu() {
   const { language, setLanguage, t } = useContext(LanguageContext);
 
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
 
@@ -180,14 +182,20 @@ function Menu() {
   |--------------------------------------------------------------------------
   */
 
-  const filteredDishes =
-    activeCategory === 'all'
-      ? dishes
-      : dishes.filter(
-          (dish) =>
-            String(dish.category).trim() ===
-            activeCategory
-        );
+  const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase();
+
+  const filteredDishes = dishes.filter((dish) => {
+    const matchesCategory =
+      activeCategory === 'all' ||
+      String(dish.category).trim() === activeCategory;
+    const matchesSearch =
+      !normalizedSearchTerm ||
+      String(dish.name || '')
+        .toLocaleLowerCase()
+        .includes(normalizedSearchTerm);
+
+    return matchesCategory && matchesSearch;
+  });
 
   /*
   |--------------------------------------------------------------------------
@@ -654,8 +662,8 @@ function Menu() {
             <nav className="menu-nav">
               <a href="/">{t.nav.home}</a>
               <a href="/menu">{t.nav.menu}</a>
-              <a href="#about">{t.nav.about}</a>
-              <a href="#gallery">{t.nav.gallery}</a>
+              <a href="/about">{t.nav.about}</a>
+              <a href="/gallery">{t.nav.gallery}</a>
             </nav>
 
             <div className="menu-header-actions">
@@ -787,6 +795,20 @@ function Menu() {
             )}
 
           </div>
+
+          <label className="menu-search">
+            <FiSearch size={18} aria-hidden="true" />
+
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) =>
+                setSearchTerm(event.target.value)
+              }
+              placeholder="Search products by name"
+              aria-label="Search products by name"
+            />
+          </label>
 
           {isLoading && (
             <div className="menu-status">
