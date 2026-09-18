@@ -2007,7 +2007,9 @@
           current_database() AS database_name,
           current_user AS database_user,
           inet_server_addr() AS server_address,
-          inet_server_port() AS server_port;
+          inet_server_port() AS server_port,
+          (SELECT COUNT(*) FROM orders) AS total_orders,
+          (SELECT MAX(id) FROM orders) AS ultimo_id;
       `);
 
       console.log(
