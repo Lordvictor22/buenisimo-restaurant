@@ -358,12 +358,12 @@
                 o.price_adjustment
               FROM product_option_groups pog
               INNER JOIN product_options po
-                ON po.group_id = pog.group_id
+                ON po.product_option_group_id = pog.id
               INNER JOIN options o
                 ON o.id = po.option_id
               WHERE
                 pog.product_id = $1
-                AND pog.group_id = $2
+                AND pog.option_group_id = $2
                 AND po.option_id = $3
               LIMIT 1
               `,
