@@ -344,33 +344,77 @@
               continue;
             }
 
-            const selectedOptions = Array.isArray(item.selectedOptions)
-              ? item.selectedOptions
-              : [];
+           const selectedOptions = Array.isArray(item.selectedOptions)
+            ? item.selectedOptions
+            : [];
 
-            const itemSubtotal =
-              Number(product.price) *
-              quantity;
+          let finalPrice = Number(product.price);
 
-          await pool.query(
+          for (const selectedOption of selectedOptions) {
+            const optionResult = await pool.query(
               `
-              INSERT INTO order_items (
-                order_id,
-                product_id,
-                quantity,
-                price,
-                selected_options
-              )
-              VALUES ($1, $2, $3, $4, $5)
+              SELECT
+                o.id,
+                o.price_adjustment
+              FROM product_option_groups pog
+              INNER JOIN product_options po
+                ON po.group_id = pog.group_id
+              INNER JOIN options o
+                ON o.id = po.option_id
+              WHERE
+                pog.product_id = $1
+                AND pog.group_id = $2
+                AND po.option_id = $3
+              LIMIT 1
               `,
               [
-                orderId,
                 product.id,
-                quantity,
-                Number(product.price),
-                JSON.stringify(selectedOptions),
+                Number(selectedOption.group_id),
+                Number(selectedOption.option_id),
               ]
             );
+
+            if (optionResult.rows.length === 0) {
+              console.error(
+                'Invalid option found while saving order:',
+                selectedOption
+              );
+
+              continue;
+            }
+
+            finalPrice += Number(
+              optionResult.rows[0].price_adjustment || 0
+            );
+          }
+
+          const itemSubtotal =
+            finalPrice * quantity;
+
+          await pool.query(
+            `
+            INSERT INTO order_items (
+              order_id,
+              product_id,
+              product_name,
+              unit_price,
+              quantity,
+              subtotal,
+              selected_options
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `,
+            [
+              orderId,
+              product.id,
+              product.name,
+              finalPrice,
+              quantity,
+              itemSubtotal,
+              JSON.stringify(selectedOptions),
+            ]
+          );
+          
 
             totalItems += quantity;
           }
