@@ -1044,6 +1044,316 @@
 
   /*
   |--------------------------------------------------------------------------
+  | ADMIN - GERENCIAR EXTRAS DO PRODUTO
+  |--------------------------------------------------------------------------
+  */
+
+  app.get(
+    '/api/admin/products/:id/options',
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const productId = Number(req.params.id);
+
+        if (!Number.isInteger(productId)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid product ID.',
+          });
+        }
+
+        const productExists = await pool.query(
+          `SELECT id FROM products WHERE id = $1`,
+          [productId]
+        );
+
+        if (productExists.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Product not found.',
+          });
+        }
+
+        const result = await pool.query(
+          `
+          SELECT
+            og.id AS option_group_id,
+            og.name AS group_name,
+            og.description AS group_description,
+            pog.required,
+            pog.min_selections,
+            pog.max_selections,
+            o.id AS option_id,
+            o.name AS option_name,
+            o.description AS option_description,
+            o.price_adjustment
+          FROM product_option_groups pog
+          JOIN option_groups og
+            ON og.id = pog.option_group_id
+          LEFT JOIN product_options po
+            ON po.product_option_group_id = pog.id
+          LEFT JOIN options o
+            ON o.id = po.option_id
+          WHERE pog.product_id = $1
+            AND og.active = TRUE
+          ORDER BY og.id ASC, po.display_order ASC, o.name ASC
+          `,
+          [productId]
+        );
+
+        const groups = new Map();
+
+        for (const row of result.rows) {
+          if (!groups.has(row.option_group_id)) {
+            groups.set(row.option_group_id, {
+              id: row.option_group_id,
+              name: row.group_name,
+              description: row.group_description || '',
+              required: Boolean(row.required),
+              min_selections: Number(row.min_selections ?? 0),
+              max_selections: Number(row.max_selections ?? 1),
+              options: [],
+            });
+          }
+
+          if (row.option_id && !groups.get(row.option_group_id).options.some((option) => Number(option.id) === Number(row.option_id))) {
+            groups.get(row.option_group_id).options.push({
+              id: Number(row.option_id),
+              name: row.option_name,
+              description: row.option_description || '',
+              price_adjustment: Number(row.price_adjustment || 0),
+            });
+          }
+        }
+
+        return res.json({
+          success: true,
+          groups: Array.from(groups.values()),
+        });
+      } catch (error) {
+        console.error('❌ Error loading product extras:', error);
+
+        return res.status(500).json({
+          success: false,
+          message: 'Unable to load product extras.',
+        });
+      }
+    }
+  );
+
+  app.put(
+    '/api/admin/products/:id/options',
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const productId = Number(req.params.id);
+
+        if (!Number.isInteger(productId)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid product ID.',
+          });
+        }
+
+        const productExists = await pool.query(
+          `SELECT id FROM products WHERE id = $1`,
+          [productId]
+        );
+
+        if (productExists.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Product not found.',
+          });
+        }
+
+        const groups = Array.isArray(req.body?.groups) ? req.body.groups : [];
+
+        if (groups.length === 0) {
+          await pool.query(
+            `
+            DELETE FROM product_options
+            WHERE product_option_group_id IN (
+              SELECT id FROM product_option_groups WHERE product_id = $1
+            );
+            DELETE FROM product_option_groups WHERE product_id = $1;
+            `,
+            [productId]
+          );
+
+          return res.json({
+            success: true,
+            groups: [],
+          });
+        }
+
+        await pool.query(
+          `
+          DELETE FROM product_options
+          WHERE product_option_group_id IN (
+            SELECT id FROM product_option_groups WHERE product_id = $1
+          );
+          DELETE FROM product_option_groups WHERE product_id = $1;
+          `,
+          [productId]
+        );
+
+        const savedGroups = [];
+
+        for (const [groupIndex, group] of groups.entries()) {
+          const name = String(group.name || '').trim();
+          const options = Array.isArray(group.options) ? group.options : [];
+
+          if (!name || options.length === 0) {
+            continue;
+          }
+
+          const minimumSelections = Number(group.min_selections ?? 0);
+          const maximumSelections = Number(group.max_selections ?? options.length);
+
+          if (!Number.isFinite(minimumSelections) || !Number.isFinite(maximumSelections) || minimumSelections < 0 || maximumSelections < 1 || minimumSelections > maximumSelections) {
+            return res.status(400).json({
+              success: false,
+              message: `Invalid selection rules for group: ${name || `#${groupIndex + 1}`}`,
+            });
+          }
+
+          const groupResult = await pool.query(
+            `
+            INSERT INTO option_groups (
+              name,
+              description,
+              required,
+              min_selections,
+              max_selections,
+              display_order,
+              active
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+            RETURNING id
+            `,
+            [
+              name,
+              String(group.description || '').trim() || null,
+              Boolean(group.required),
+              minimumSelections,
+              maximumSelections,
+              groupIndex + 1,
+            ]
+          );
+
+          const optionGroupId = groupResult.rows[0].id;
+
+          const productGroupResult = await pool.query(
+            `
+            INSERT INTO product_option_groups (
+              product_id,
+              option_group_id,
+              required,
+              min_selections,
+              max_selections,
+              display_order
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id
+            `,
+            [
+              productId,
+              optionGroupId,
+              Boolean(group.required),
+              minimumSelections,
+              maximumSelections,
+              groupIndex + 1,
+            ]
+          );
+
+          const productOptionGroupId = productGroupResult.rows[0].id;
+
+          for (const [optionIndex, option] of options.entries()) {
+            const optionName = String(option.name || '').trim();
+            const numericPrice = Number(option.price_adjustment ?? 0);
+
+            if (!optionName || !Number.isFinite(numericPrice)) {
+              continue;
+            }
+
+            const optionResult = await pool.query(
+              `
+              INSERT INTO options (
+                option_group_id,
+                name,
+                description,
+                price_adjustment,
+                display_order,
+                active
+              )
+              VALUES ($1, $2, $3, $4, $5, TRUE)
+              RETURNING id
+              `,
+              [
+                optionGroupId,
+                optionName,
+                String(option.description || '').trim() || null,
+                numericPrice,
+                optionIndex + 1,
+              ]
+            );
+
+            const optionId = optionResult.rows[0].id;
+
+            await pool.query(
+              `
+              INSERT INTO product_options (
+                product_option_group_id,
+                option_id,
+                display_order
+              )
+              VALUES ($1, $2, $3)
+              `,
+              [
+                productOptionGroupId,
+                optionId,
+                optionIndex + 1,
+              ]
+            );
+          }
+
+          savedGroups.push({
+            id: optionGroupId,
+            name,
+            description: String(group.description || '').trim(),
+            required: Boolean(group.required),
+            min_selections: minimumSelections,
+            max_selections: maximumSelections,
+            options: options
+              .filter((option) => String(option.name || '').trim())
+              .map((option) => ({
+                id: null,
+                name: String(option.name || '').trim(),
+                description: String(option.description || '').trim(),
+                price_adjustment: Number(option.price_adjustment ?? 0),
+              })),
+          });
+        }
+
+        return res.json({
+          success: true,
+          groups: savedGroups,
+        });
+      } catch (error) {
+        console.error('❌ Error saving product extras:', JSON.stringify(req.body || {}, null, 2));
+        console.error(error.stack || error);
+
+        return res.status(500).json({
+          success: false,
+          message: 'Unable to save product extras.',
+        });
+      }
+    }
+  );
+
+  /*
+  |--------------------------------------------------------------------------
   | Criar produto
   |--------------------------------------------------------------------------
   */
