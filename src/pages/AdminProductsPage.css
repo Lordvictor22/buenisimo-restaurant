@@ -609,6 +609,172 @@
   line-height: 1.4;
 }
 
+.admin-form-extras-section {
+  margin-top: 8px;
+}
+
+.admin-extra-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-extra-header label {
+  margin: 0;
+  display: block;
+}
+
+.admin-extra-helper {
+  margin: 6px 0 0;
+  color: #7a766f;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.admin-extra-add-button,
+.admin-extra-remove-button,
+.admin-extra-option-add,
+.admin-extra-option-remove {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.admin-extra-add-button {
+  padding: 8px 12px;
+  background: #f8ecec;
+  color: #9b1c1f;
+}
+
+.admin-extra-remove-button,
+.admin-extra-option-remove {
+  padding: 7px 10px;
+  background: #f9f4f4;
+  color: #a04444;
+}
+
+.admin-extra-option-add {
+  padding: 8px 12px;
+  background: #eef7f0;
+  color: #287746;
+}
+
+.admin-extra-add-button:hover,
+.admin-extra-remove-button:hover,
+.admin-extra-option-add:hover,
+.admin-extra-option-remove:hover {
+  transform: translateY(-1px);
+}
+
+.admin-extra-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-extra-group {
+  padding: 16px;
+  border: 1px solid #eae6e1;
+  border-radius: 14px;
+  background: #fcfbfa;
+}
+
+.admin-extra-group-top,
+.admin-extra-group-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-extra-group-top {
+  margin-bottom: 10px;
+}
+
+.admin-extra-group-top input,
+.admin-extra-group-meta input,
+.admin-extra-group textarea,
+.admin-extra-option input,
+.admin-extra-option textarea {
+  width: 100%;
+  border: 1px solid #dedbd7;
+  border-radius: 9px;
+  background: #fff;
+  color: #222;
+  font: inherit;
+}
+
+.admin-extra-group-top input,
+.admin-extra-group-meta input,
+.admin-extra-option input {
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.admin-extra-group textarea,
+.admin-extra-option textarea {
+  min-height: 64px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.admin-extra-group-meta {
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.admin-extra-group-meta label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #4c4a47;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-extra-group-meta input[type='number'] {
+  max-width: 100px;
+}
+
+.admin-extra-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.admin-extra-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(96px, 0.6fr);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #efeae5;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.admin-extra-option textarea {
+  grid-column: 1 / -1;
+}
+
+.admin-extra-option .admin-extra-option-remove {
+  grid-column: 1 / -1;
+  justify-self: flex-start;
+}
+
+.admin-extra-empty-state {
+  padding: 16px;
+  border: 1px dashed #d9d3ce;
+  border-radius: 10px;
+  background: #faf9f7;
+  color: #736d68;
+  font-size: 12px;
+}
+
 /* =========================================================
    PRICE INPUT
    ========================================================= */

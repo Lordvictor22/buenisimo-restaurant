@@ -31,12 +31,33 @@ function PaymentPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const totalItems = cartItems.reduce(
+  const getItemOptionAdjustment = (item) =>
+    (Array.isArray(item?.selectedOptions)
+      ? item.selectedOptions
+      : []
+    ).reduce(
+      (total, option) =>
+        total + Number(option.price_adjustment || 0),
+      0
+    );
+
+  const getItemUnitPrice = (item) => {
+    const basePrice = Number(item?.basePrice ?? item?.price ?? 0);
+    return basePrice + getItemOptionAdjustment(item);
+  };
+
+  const normalizedCartItems = cartItems.map((item) => ({
+    ...item,
+    basePrice: Number(item.basePrice ?? item.price ?? 0),
+    price: getItemUnitPrice(item),
+  }));
+
+  const totalItems = normalizedCartItems.reduce(
     (total, item) => total + Number(item.quantity || 0),
     0
   );
 
-  const totalPrice = cartItems.reduce(
+  const totalPrice = normalizedCartItems.reduce(
     (total, item) =>
       total + Number(item.price || 0) * Number(item.quantity || 0),
     0
@@ -61,6 +82,12 @@ function PaymentPage() {
     try {
       setIsLoading(true);
 
+      const sanitizedItems = normalizedCartItems.map((item) => ({
+        ...item,
+        price: getItemUnitPrice(item),
+        basePrice: Number(item.basePrice ?? item.price ?? 0),
+      }));
+
       const response = await fetch(
         `${API_URL}/payment/create-checkout-session`,
         {
@@ -69,8 +96,11 @@ function PaymentPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            items: cartItems,
-            checkoutData,
+            items: sanitizedItems,
+            checkoutData: {
+              ...checkoutData,
+              items: sanitizedItems,
+            },
           }),
         }
       );
@@ -261,7 +291,7 @@ function PaymentPage() {
 
             <div className="payment-items">
 
-              {cartItems.map((item) => (
+              {normalizedCartItems.map((item) => (
                 <div
                   className="payment-item"
                   key={item.id}
@@ -289,18 +319,29 @@ function PaymentPage() {
                     </h3>
 
                     <p>
-                      {item.quantity} × $
-                      {Number(item.price || 0).toFixed(2)}
+                      {item.quantity} × ${Number(item.price || 0).toFixed(2)}
                     </p>
+
+                    {Array.isArray(item.selectedOptions) && item.selectedOptions.length > 0 && (
+                      <div className="payment-item-options">
+                        {item.selectedOptions.map((option, optionIndex) => (
+                          <div key={`${option.option_id}-${optionIndex}`} className="payment-item-option">
+                            <span>{option.group_name}:</span>
+                            <strong>{option.option_name}</strong>
+                            {Number(option.price_adjustment || 0) !== 0 && (
+                              <small>
+                                {Number(option.price_adjustment) > 0 ? '+' : ''}${Number(option.price_adjustment).toFixed(2)}
+                              </small>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                   </div>
 
                   <strong>
-                    $
-                    {(
-                      Number(item.price || 0) *
-                      Number(item.quantity || 0)
-                    ).toFixed(2)}
+                    ${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}
                   </strong>
 
                 </div>

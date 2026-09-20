@@ -5,6 +5,7 @@ import {
   FiSearch,
 } from 'react-icons/fi';
 import { LanguageContext } from '../../context/LanguageContext';
+import { CartContext } from '../../context/CartContext';
 import Cart from '../Cart/Cart';
 import './menu.css';
 import logoBuenisimo from '../../assets/images/LogoBuenisimo123.png';
@@ -14,6 +15,10 @@ const API_URL =
 
 function Menu() {
   const { language, setLanguage, t } = useContext(LanguageContext);
+  const {
+  cartItems,
+  setCartItems,
+} = useContext(CartContext);
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,16 +35,7 @@ function Menu() {
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [optionsError, setOptionsError] = useState('');
 
-  const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem('buenisimo-cart');
-
-    try {
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch (error) {
-      console.error('Error reading saved cart:', error);
-      return [];
-    }
-  });
+  
 
   const languages = [
     { code: 'EN', name: 'English', flag: '🇺🇸' },
@@ -67,12 +63,7 @@ function Menu() {
   |--------------------------------------------------------------------------
   */
 
-  useEffect(() => {
-    localStorage.setItem(
-      'buenisimo-cart',
-      JSON.stringify(cartItems)
-    );
-  }, [cartItems]);
+  
 
   /*
   |--------------------------------------------------------------------------
@@ -245,7 +236,8 @@ function Menu() {
             return {
               ...item,
               id: Number(item.id),
-              price: Number(item.price),
+              price: Number(normalizedDish.price || item.price || 0),
+              basePrice: Number(normalizedDish.price || item.basePrice || normalizedDish.price || 0),
               quantity:
                 Number(item.quantity || 0) + 1,
             };
@@ -443,6 +435,7 @@ function Menu() {
   */
 
   const addConfiguredToCart = () => {
+
     if (!selectedDish) {
       return;
     }
@@ -478,9 +471,10 @@ function Menu() {
               Number(optionId)
           );
 
-        if (!option) {
+       if (!option) {
           return;
         }
+
 
         selectedOptionObjects.push({
           group_id: Number(group.id),
@@ -546,10 +540,15 @@ function Menu() {
           item.cartKey === cartKey
             ? {
                 ...item,
+                id: Number(selectedDish.id),
+                price: finalPrice,
+                basePrice,
                 quantity:
                   Number(
                     item.quantity || 0
                   ) + 1,
+                selectedOptions:
+                  selectedOptionObjects,
               }
             : item
         );

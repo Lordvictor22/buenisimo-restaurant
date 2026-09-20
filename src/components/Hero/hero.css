@@ -1338,6 +1338,8 @@
 
   .hero-top {
     min-height: 76px;
+    flex-wrap: wrap;
+    padding: 14px 0 0;
   }
 
   .hero-brand {
@@ -1345,10 +1347,28 @@
   }
 
   .hero-nav {
+    order: 3;
+    flex: 0 0 100%;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 12px 0 0;
+    overflow-x: auto;
+    padding: 0 2px 14px;
+    scrollbar-width: none;
+  }
+
+  .hero-nav::-webkit-scrollbar {
     display: none;
   }
 
+  .hero-nav a {
+    flex: 0 0 auto;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
   .hero-header-actions {
+    order: 2;
     margin-left: auto;
 
     gap: 8px;

@@ -19,6 +19,23 @@ const getAuthHeaders = (includeJson = false) => {
   };
 };
 
+const makeEmptyExtraOption = () => ({
+  id: null,
+  name: '',
+  description: '',
+  price_adjustment: '',
+});
+
+const makeEmptyExtraGroup = () => ({
+  id: null,
+  name: '',
+  description: '',
+  required: true,
+  min_selections: 0,
+  max_selections: 1,
+  options: [makeEmptyExtraOption()],
+});
+
 const EMPTY_FORM = {
   name: '',
   description: '',
@@ -26,6 +43,35 @@ const EMPTY_FORM = {
   price: '',
   image_url: '',
   available: true,
+  extras: [makeEmptyExtraGroup()],
+};
+
+const sanitizeNumericValue = (value, fallback = 0) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+};
+
+const normalizeExtrasForForm = (groups = []) => {
+  if (!Array.isArray(groups)) {
+    return [];
+  }
+
+  return groups.map((group) => ({
+    id: group.id ?? null,
+    name: group.name || '',
+    description: group.description || '',
+    required: group.required !== false,
+    min_selections: Number(group.min_selections ?? 0),
+    max_selections: Number(group.max_selections ?? 1),
+    options: Array.isArray(group.options) && group.options.length > 0
+      ? group.options.map((option) => ({
+          id: option.id ?? null,
+          name: option.name || '',
+          description: option.description || '',
+          price_adjustment: option.price_adjustment ?? 0,
+        }))
+      : [makeEmptyExtraOption()],
+  }));
 };
 
 function AdminProductsPage() {
@@ -95,8 +141,226 @@ function AdminProductsPage() {
     }));
   };
 
+  const handleExtraGroupChange = (groupIndex, field, value) => {
+    setFormData((currentData) => ({
+      ...currentData,
+      extras: currentData.extras.map((group, index) => {
+        if (index !== groupIndex) {
+          return group;
+        }
+
+        if (field === 'required') {
+          return {
+            ...group,
+            required: Boolean(value),
+          };
+        }
+
+        if (field === 'min_selections') {
+          const nextValue = Math.max(0, sanitizeNumericValue(value, 0));
+          return {
+            ...group,
+            min_selections: nextValue,
+            max_selections: Math.max(
+              Number(group.max_selections || 1),
+              nextValue
+            ),
+          };
+        }
+
+        if (field === 'max_selections') {
+          return {
+            ...group,
+            max_selections: Math.max(1, sanitizeNumericValue(value, 1)),
+          };
+        }
+
+        return {
+          ...group,
+          [field]: value,
+        };
+      }),
+    }));
+  };
+
+  const handleExtraOptionChange = (groupIndex, optionIndex, field, value) => {
+    setFormData((currentData) => ({
+      ...currentData,
+      extras: currentData.extras.map((group, groupPos) => {
+        if (groupPos !== groupIndex) {
+          return group;
+        }
+
+        return {
+          ...group,
+          options: group.options.map((option, optionPos) => {
+            if (optionPos !== optionIndex) {
+              return option;
+            }
+
+            return {
+              ...option,
+              [field]: value,
+            };
+          }),
+        };
+      }),
+    }));
+  };
+
+  const addExtraGroup = () => {
+    setFormData((currentData) => ({
+      ...currentData,
+      extras: [...currentData.extras, makeEmptyExtraGroup()],
+    }));
+  };
+
+  const removeExtraGroup = (groupIndex) => {
+    setFormData((currentData) => ({
+      ...currentData,
+      extras: currentData.extras.filter((_, index) => index !== groupIndex),
+    }));
+  };
+
+  const addExtraOption = (groupIndex) => {
+    setFormData((currentData) => ({
+      ...currentData,
+      extras: currentData.extras.map((group, index) => {
+        if (index !== groupIndex) {
+          return group;
+        }
+
+        return {
+          ...group,
+          options: [...group.options, makeEmptyExtraOption()],
+        };
+      }),
+    }));
+  };
+
+  const removeExtraOption = (groupIndex, optionIndex) => {
+    setFormData((currentData) => ({
+      ...currentData,
+      extras: currentData.extras.map((group, index) => {
+        if (index !== groupIndex) {
+          return group;
+        }
+
+        const nextOptions = group.options.filter((_, optionPos) => optionPos !== optionIndex);
+
+        return {
+          ...group,
+          options: nextOptions.length > 0 ? nextOptions : [makeEmptyExtraOption()],
+        };
+      }),
+    }));
+  };
+
+  const getProductExtras = async (productId) => {
+    const response = await fetch(
+      `${API_URL}/admin/products/${productId}/options`,
+      {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return normalizeExtrasForForm(data.groups || data || []);
+  };
+
+  const validateProductExtras = (extras) => {
+    const sanitizedGroups = [];
+
+    for (const group of extras || []) {
+      const name = String(group.name || '').trim();
+      const options = Array.isArray(group.options) ? group.options : [];
+
+      if (!name) {
+        continue;
+      }
+
+      const normalizedOptions = [];
+
+      for (const option of options) {
+        const optionName = String(option.name || '').trim();
+        const rawPrice = option.price_adjustment ?? 0;
+        const numericPrice = Number(rawPrice);
+
+        if (!optionName) {
+          continue;
+        }
+
+        if (!Number.isFinite(numericPrice)) {
+          continue;
+        }
+
+        normalizedOptions.push({
+          id: option.id ?? null,
+          name: optionName,
+          description: String(option.description || '').trim(),
+          price_adjustment: numericPrice,
+        });
+      }
+
+      if (normalizedOptions.length === 0) {
+        continue;
+      }
+
+      const minSelections = Math.max(0, sanitizeNumericValue(group.min_selections ?? 0, 0));
+      const maxSelections = Math.max(
+        1,
+        sanitizeNumericValue(group.max_selections ?? normalizedOptions.length, normalizedOptions.length)
+      );
+
+      const safeMin = Math.min(minSelections, maxSelections);
+
+      sanitizedGroups.push({
+        id: group.id ?? null,
+        name,
+        description: String(group.description || '').trim(),
+        required: Boolean(group.required),
+        min_selections: safeMin,
+        max_selections: maxSelections,
+        options: normalizedOptions,
+      });
+    }
+
+    return sanitizedGroups;
+  };
+
+  const persistProductExtras = async (productId, extras) => {
+    const normalizedExtras = validateProductExtras(extras || []);
+
+    const response = await fetch(
+      `${API_URL}/admin/products/${productId}/options`,
+      {
+        method: 'PUT',
+        headers: getAuthHeaders(true),
+        body: JSON.stringify({
+          groups: normalizedExtras,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Unable to save product extras.');
+    }
+
+    return data.groups || [];
+  };
+
   const resetForm = () => {
-    setFormData(EMPTY_FORM);
+    setFormData({
+      ...EMPTY_FORM,
+      extras: [makeEmptyExtraGroup()],
+    });
     setEditingProduct(null);
   };
 
@@ -105,9 +369,8 @@ function AdminProductsPage() {
     setShowForm(true);
   };
 
-  const handleEditProduct = (product) => {
+  const handleEditProduct = async (product) => {
     setEditingProduct(product);
-
     setFormData({
       name: product.name || '',
       description: product.description || '',
@@ -115,7 +378,23 @@ function AdminProductsPage() {
       price: product.price ?? '',
       image_url: product.image_url || '',
       available: Boolean(product.available),
+      extras: [makeEmptyExtraGroup()],
     });
+
+    try {
+      const productExtras = await getProductExtras(product.id);
+      setFormData({
+        name: product.name || '',
+        description: product.description || '',
+        category: product.category || 'Lunches',
+        price: product.price ?? '',
+        image_url: product.image_url || '',
+        available: Boolean(product.available),
+        extras: productExtras.length > 0 ? productExtras : [makeEmptyExtraGroup()],
+      });
+    } catch (error) {
+      console.error('Unable to load product extras:', error);
+    }
 
     setShowForm(true);
   };
@@ -178,11 +457,15 @@ function AdminProductsPage() {
         );
       }
 
+      const savedProduct = data.product;
+
+      await persistProductExtras(savedProduct.id, formData.extras);
+
       if (isEditing) {
         setProducts((currentProducts) =>
           currentProducts.map((product) =>
-            product.id === data.product.id
-              ? data.product
+            product.id === savedProduct.id
+              ? savedProduct
               : product
           )
         );
@@ -191,7 +474,7 @@ function AdminProductsPage() {
       } else {
         setProducts((currentProducts) => [
           ...currentProducts,
-          data.product,
+          savedProduct,
         ]);
 
         alert('Product created successfully.');
@@ -644,6 +927,180 @@ function AdminProductsPage() {
                         }));
                       }}
                     />
+                  </div>
+
+                  <div className="admin-form-field admin-form-field-full admin-form-extras-section">
+                    <div className="admin-extra-header">
+                      <div>
+                        <label>Extras / add-ons</label>
+                        <p className="admin-extra-helper">
+                          Add ingredients or upgrades with their values. Example: Carne Asada + $4.50.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="admin-extra-add-button"
+                        onClick={addExtraGroup}
+                      >
+                        + Add extra group
+                      </button>
+                    </div>
+
+                    <div className="admin-extra-groups">
+                      {formData.extras.length === 0 ? (
+                        <div className="admin-extra-empty-state">
+                          No extras added yet. Add a group to offer ingredients or toppings.
+                        </div>
+                      ) : (
+                        formData.extras.map((group, groupIndex) => (
+                          <div className="admin-extra-group" key={`group-${groupIndex}`}>
+                            <div className="admin-extra-group-top">
+                              <input
+                                type="text"
+                                value={group.name}
+                                placeholder="Group name: Meat, cheese, sauce..."
+                                onChange={(event) =>
+                                  handleExtraGroupChange(groupIndex, 'name', event.target.value)
+                                }
+                              />
+
+                              <button
+                                type="button"
+                                className="admin-extra-remove-button"
+                                onClick={() => removeExtraGroup(groupIndex)}
+                              >
+                                Remove group
+                              </button>
+                            </div>
+
+                            <div className="admin-extra-group-meta">
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(group.required)}
+                                  onChange={(event) =>
+                                    handleExtraGroupChange(
+                                      groupIndex,
+                                      'required',
+                                      event.target.checked
+                                    )
+                                  }
+                                />
+                                Required choice
+                              </label>
+
+                              <input
+                                type="number"
+                                min="0"
+                                value={group.min_selections}
+                                onChange={(event) =>
+                                  handleExtraGroupChange(
+                                    groupIndex,
+                                    'min_selections',
+                                    event.target.value
+                                  )
+                                }
+                                placeholder="Min"
+                              />
+
+                              <input
+                                type="number"
+                                min="1"
+                                value={group.max_selections}
+                                onChange={(event) =>
+                                  handleExtraGroupChange(
+                                    groupIndex,
+                                    'max_selections',
+                                    event.target.value
+                                  )
+                                }
+                                placeholder="Max"
+                              />
+                            </div>
+
+                            <textarea
+                              rows="2"
+                              value={group.description}
+                              placeholder="Optional description for this extra group"
+                              onChange={(event) =>
+                                handleExtraGroupChange(
+                                  groupIndex,
+                                  'description',
+                                  event.target.value
+                                )
+                              }
+                            />
+
+                            <div className="admin-extra-options">
+                              {group.options.map((option, optionIndex) => (
+                                <div className="admin-extra-option" key={`option-${groupIndex}-${optionIndex}`}>
+                                  <input
+                                    type="text"
+                                    value={option.name}
+                                    placeholder="Extra choice name"
+                                    onChange={(event) =>
+                                      handleExtraOptionChange(
+                                        groupIndex,
+                                        optionIndex,
+                                        'name',
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+
+                                  <input
+                                    type="number"
+                                    min="-9999"
+                                    step="0.01"
+                                    value={option.price_adjustment}
+                                    placeholder="0.00"
+                                    onChange={(event) =>
+                                      handleExtraOptionChange(
+                                        groupIndex,
+                                        optionIndex,
+                                        'price_adjustment',
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+
+                                  <textarea
+                                    rows="2"
+                                    value={option.description}
+                                    placeholder="Optional note or description"
+                                    onChange={(event) =>
+                                      handleExtraOptionChange(
+                                        groupIndex,
+                                        optionIndex,
+                                        'description',
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+
+                                  <button
+                                    type="button"
+                                    className="admin-extra-option-remove"
+                                    onClick={() => removeExtraOption(groupIndex, optionIndex)}
+                                  >
+                                    Remove choice
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+
+                            <button
+                              type="button"
+                              className="admin-extra-option-add"
+                              onClick={() => addExtraOption(groupIndex)}
+                            >
+                              + Add extra choice
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
 
                   <div className="admin-form-availability">

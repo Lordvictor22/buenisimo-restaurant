@@ -21,6 +21,21 @@ function CheckoutPage() {
     notes: '',
   });
 
+  const getItemOptionAdjustment = (item) =>
+    (Array.isArray(item?.selectedOptions)
+      ? item.selectedOptions
+      : []
+    ).reduce(
+      (total, option) =>
+        total + Number(option.price_adjustment || 0),
+      0
+    );
+
+  const getItemUnitPrice = (item) => {
+    const basePrice = Number(item?.basePrice ?? item?.price ?? 0);
+    return basePrice + getItemOptionAdjustment(item);
+  };
+
   /*
   |--------------------------------------------------------------------------
   | Totais
@@ -34,7 +49,7 @@ function CheckoutPage() {
 
   const totalPrice = cartItems.reduce(
     (total, item) =>
-      total + Number(item.price || 0) * Number(item.quantity || 0),
+      total + getItemUnitPrice(item) * Number(item.quantity || 0),
     0
   );
 
@@ -107,6 +122,11 @@ function CheckoutPage() {
       customer,
       totalItems,
       totalPrice,
+      items: cartItems.map((item) => ({
+        ...item,
+        price: getItemUnitPrice(item),
+        basePrice: Number(item.basePrice ?? item.price ?? 0),
+      })),
     };
 
     localStorage.setItem(
@@ -402,7 +422,7 @@ function CheckoutPage() {
 
                   const quantity = Number(item.quantity || 0);
 
-                  const price = Number(item.price || 0);
+                  const price = getItemUnitPrice(item);
 
                   const itemTotal = price * quantity;
 
@@ -456,6 +476,12 @@ function CheckoutPage() {
                                     <strong>
                                       {option.option_name}
                                     </strong>
+
+                                    {Number(option.price_adjustment || 0) !== 0 && (
+                                      <small>
+                                        {Number(option.price_adjustment) > 0 ? '+' : ''}${Number(option.price_adjustment).toFixed(2)}
+                                      </small>
+                                    )}
                                   </div>
                                 )
                               )}
