@@ -663,12 +663,11 @@
       if (
         !decoded ||
         !decoded.id ||
-        decoded.role !== 'admin'
+        !['admin', 'manager'].includes(decoded.role)
       ) {
         return res.status(403).json({
           success: false,
-          message:
-            'Administrator access required.',
+          message: 'Administrator access required.',
         });
       }
 
