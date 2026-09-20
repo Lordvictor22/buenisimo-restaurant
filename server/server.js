@@ -662,12 +662,13 @@
 
       if (
         !decoded ||
-        !decoded.id
+        !decoded.id ||
+        decoded.role !== 'admin'
       ) {
-        return res.status(401).json({
+        return res.status(403).json({
           success: false,
           message:
-            'Invalid authentication token.',
+            'Administrator access required.',
         });
       }
 
@@ -2038,33 +2039,11 @@
   |--------------------------------------------------------------------------
   */
 
-  app.listen(
+app.listen(
   PORT,
   async () => {
     console.log(
       `Buenisimo server running on http://localhost:${PORT}`
     );
-
-    try {
-      const result = await pool.query(`
-        SELECT
-          current_database() AS database_name,
-          current_user AS database_user,
-          inet_server_addr() AS server_address,
-          inet_server_port() AS server_port,
-          (SELECT COUNT(*) FROM orders) AS total_orders,
-          (SELECT MAX(id) FROM orders) AS ultimo_id;
-      `);
-
-      console.log(
-        '🔌 Database connection:',
-        result.rows[0]
-      );
-    } catch (error) {
-      console.error(
-        '❌ Database connection check failed:',
-        error.message
-      );
-    }
   }
 );
